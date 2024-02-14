@@ -1,0 +1,15 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+*.csv
+*.pdf
+inst/data/
+inst/ignore/
+mimic
+*.Rout
+*.bib
+*.rds
+*.sh
+

@@ -1,0 +1,18 @@
+Package: comet
+Type: Package
+Title: Covariance Measure Tests for Conditional Independence 
+Version: 0.0-1
+Authors@R: person("Lucas", "Kook", email = "lucasheinrich.kook@gmail.com",
+    role = c("aut", "cre"))
+Description: Covariance measure tests for conditional independence testing 
+    against conditional covariance and nonlinear conditional mean alternatives.
+    Contains versions of the generalised covariance measure test (Shah and Peters,
+    2020, <doi:TODO>) and projected covariance measure test (Lundborg et al., 2023,
+    <doi:TODO>). Applications can be found in Kook and Lundborg (2024, <doi:>).
+Imports: mlt, sandwich, ranger, glmnet
+License: GPL-3
+Encoding: UTF-8
+RoxygenNote: 7.2.3
+Suggests: 
+    testthat (>= 3.0.0), tram, ggplot2, tidyr, ggpubr, dplyr
+Config/testthat/edition: 3
