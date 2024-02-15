@@ -2,13 +2,14 @@ Package: comet
 Type: Package
 Title: Covariance Measure Tests for Conditional Independence 
 Version: 0.0-1
-Authors@R: person("Lucas", "Kook", email = "lucasheinrich.kook@gmail.com",
-    role = c("aut", "cre"))
+Authors@R: c(person("Lucas", "Kook", email = "lucasheinrich.kook@gmail.com",
+    role = c("aut", "cre")), person("Anton Rask", "Lundborg", role = "ctb"))
 Description: Covariance measure tests for conditional independence testing 
     against conditional covariance and nonlinear conditional mean alternatives.
-    Contains versions of the generalised covariance measure test (Shah and Peters,
-    2020, <doi:TODO>) and projected covariance measure test (Lundborg et al., 2023,
-    <doi:TODO>). Applications can be found in Kook and Lundborg (2024, <doi:>).
+    Contains versions of the generalised covariance measure test 
+    (Shah and Peters, 2020, <doi:10.1214/19-aos1857>) and projected covariance 
+    measure test (Lundborg et al., 2023, <doi:10.48550/arXiv.2211.02039>). 
+    Applications can be found in Kook and Lundborg (2024, <doi:>).
 Imports: ranger, glmnet
 License: GPL-3
 Encoding: UTF-8
