@@ -2,26 +2,46 @@
 % Please edit documentation in R/gcm.R
 \name{gcm}
 \alias{gcm}
-\title{GCM using random forests}
+\title{Generalised covariance measure test using random forests}
 \usage{
 gcm(Y, X, Z, alternative = c("two.sided", "less", "greater"), ...)
 }
 \arguments{
-\item{Y}{Response}
+\item{Y}{Vector of response values. Can be supplied as a numeric vector or
+a single column matrix.}
 
-\item{X}{Covariates}
+\item{X}{Matrix or data.frame of covariates.}
 
-\item{Z}{Covariates}
+\item{Z}{Matrix or data.frame of covariates.}
 
-\item{alternative}{Alternative}
+\item{alternative}{A character string specifying the alternative hypothesis,
+must be one of \code{"two.sided"} (default), \code{"greater"} or
+\code{"less"}}
 
-\item{...}{Additional arguments to ranger}
+\item{...}{Additional arguments passed to ranger}
 }
 \value{
-Object of class htest
+Object of class '\code{gcm}' and '\code{htest}' with the following
+components:
+\itemize{
+\item{\code{statistic}} {The value of the test statistic.}
+\item{\code{p.value}} {The p-value for the \code{hypothesis}}
+\item{\code{parameter}} {In case X is multidimensional, this is the degrees of
+    freedom used for the chi-squared test.}
+\item{\code{hypothesis}} {String specifying the null hypothesis .}
+\item{\code{null.value}} {String specifying the null hypothesis.}
+\item{\code{method}} {The string \code{"Generalised covariance measure test"}.}
+\item{\code{data.name}} {A character string giving the name(s) of the data.}
+\item{\code{rY}} {Residuals for the Y on Z regression.}
+\item{\code{rX}} {Residuals for the X on Z regression.}
+}
 }
 \description{
-GCM using random forests
+Generalised covariance measure test using random forests
+}
+\details{
+The generalised covariance measure test tests whether the conditional
+covariance of Y and X given Z is zero.
 }
 \examples{
 X <- matrix(rnorm(2e3), ncol = 2)
@@ -30,6 +50,10 @@ Z <- matrix(rnorm(2e3), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
 Y <- rnorm(1e3) # X[, 2] + Z[, 2] + rnorm(1e3)
 (gcm1 <- gcm(Y, X, Z))
-plot(gcm1)
 
+}
+\references{
+Rajen D. Shah, Jonas Peters "The hardness of conditional independence testing
+and the generalised covariance measure," The Annals of Statistics, 48(3),
+1514-1538. \doi{10.1214/19-aos1857}
 }

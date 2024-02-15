@@ -1,12 +1,37 @@
-#' GCM using random forests
+#' Generalised covariance measure test using random forests
 #'
-#' @param Y Response
-#' @param X Covariates
-#' @param Z Covariates
-#' @param alternative Alternative
-#' @param ... Additional arguments to ranger
+#' @details
+#' The generalised covariance measure test tests whether the conditional
+#' covariance of Y and X given Z is zero.
 #'
-#' @return Object of class htest
+#' @references
+#' Rajen D. Shah, Jonas Peters "The hardness of conditional independence testing
+#' and the generalised covariance measure," The Annals of Statistics, 48(3),
+#' 1514-1538. \doi{10.1214/19-aos1857}
+#'
+#' @param Y Vector of response values. Can be supplied as a numeric vector or
+#'     a single column matrix.
+#' @param X Matrix or data.frame of covariates.
+#' @param Z Matrix or data.frame of covariates.
+#' @param alternative A character string specifying the alternative hypothesis,
+#'     must be one of \code{"two.sided"} (default), \code{"greater"} or
+#'     \code{"less"}
+#' @param ... Additional arguments passed to ranger
+#'
+#' @returns Object of class '\code{gcm}' and '\code{htest}' with the following
+#' components:
+#' \itemize{
+#' \item{\code{statistic}} {The value of the test statistic.}
+#' \item{\code{p.value}} {The p-value for the \code{hypothesis}}
+#' \item{\code{parameter}} {In case X is multidimensional, this is the degrees of
+#'     freedom used for the chi-squared test.}
+#' \item{\code{hypothesis}} {String specifying the null hypothesis .}
+#' \item{\code{null.value}} {String specifying the null hypothesis.}
+#' \item{\code{method}} {The string \code{"Generalised covariance measure test"}.}
+#' \item{\code{data.name}} {A character string giving the name(s) of the data.}
+#' \item{\code{rY}} {Residuals for the Y on Z regression.}
+#' \item{\code{rX}} {Residuals for the X on Z regression.}
+#' }
 #' @export
 #'
 #' @examples
@@ -16,7 +41,6 @@
 #' colnames(Z) <- c("Z1", "Z2")
 #' Y <- rnorm(1e3) # X[, 2] + Z[, 2] + rnorm(1e3)
 #' (gcm1 <- gcm(Y, X, Z))
-#' plot(gcm1)
 #'
 gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"), ...) {
   alternative <- match.arg(alternative)
@@ -31,8 +55,17 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"), ...) {
   stat <- .gcm(rY, rX)
   pval <- .compute_normal_pval(stat, alternative)
 
+  if (!is.null(df <- attr(pval, "df"))) {
+    tname <- "X-squared"
+    par <- c("df" = df)
+  } else {
+    tname <- "Z"
+    par <- NULL
+  }
+  names(stat) <- tname
+
   structure(list(
-    statistic = c("Z" = stat), p.value = pval,
+    statistic = stat, p.value = pval, parameter = par,
     hypothesis = c("E[cov(Y, X | Z)]" = "0"),
     null.value = c("E[cov(Y, X | Z)]" = "0"), alternative = alternative,
     method = paste0("Generalized covariance measure test"),

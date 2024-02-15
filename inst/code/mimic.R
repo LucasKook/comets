@@ -3,7 +3,6 @@
 
 set.seed(2410)
 nrep <- 5
-run_full <- TRUE
 red <- 111 # 98% variance
 
 # Dependencies ------------------------------------------------------------
@@ -91,7 +90,7 @@ run_tests <- function(splits = 20, max_size = 1e4, verbose = FALSE) {
     nemb <- emb[idx, ]
 
     ### Test resp _||_ race | emb, age, sex ### GCM/PCM
-    gcm1 <- ranger_gcm(nemb[, nY], .mm(nX, nemb), .mm(c(nZ, nC), nemb),
+    gcm1 <- gcm(nemb[, nY], .mm(nX, nemb), .mm(c(nZ, nC), nemb),
                        mtry = rargs$mtry, max.depth = rargs$max.depth)
     if (verbose)
       cat("\nGCM1 done")
@@ -101,7 +100,7 @@ run_tests <- function(splits = 20, max_size = 1e4, verbose = FALSE) {
     if (verbose)
       cat("\nPCM1 done")
     ### Test resp _||_ emb | race, age, sex ### GCM/PCM
-    gcm2 <- ranger_gcm(nemb[, nY], .mm(nZ, nemb), .mm(c(nX, nC), nemb),
+    gcm2 <- gcm(nemb[, nY], .mm(nZ, nemb), .mm(c(nX, nC), nemb),
                        mtry = rargs$mtry, max.depth = rargs$max.depth)
     if (verbose)
       cat("\nGCM2 done")
@@ -115,49 +114,44 @@ run_tests <- function(splits = 20, max_size = 1e4, verbose = FALSE) {
   })
 }
 
-### RUN either on full data or with splits
-if (run_full) {
+### RUN on full data
+print(full <- run_tests(1, nrow(emb), verbose = TRUE))
+pvals <- c(
+  "GCM1" = -log10(full[[1]]$GCM1$p.value),
+  "PCM1" = -log10(full[[1]]$PCM1$p.value),
+  "GCM2" = -pchisq(unname(full[[1]]$GCM2$statistic), log.p = TRUE,
+                   df = 111, lower.tail = FALSE) / log(10),
+  "PCM2" = -pnorm(unname(full[[1]]$PCM2$statistic), log.p = TRUE,
+                  lower.tail = FALSE) / log(10)
+)
+cat("Negative log10 p-values\n")
+print(pvals)
+saveRDS(full, "inst/results/mimic-full.rds")
 
-  print(full <- run_tests(1, nrow(emb), verbose = TRUE))
-  pvals <- c(
-    "GCM1" = -log10(full[[1]]$GCM1$p.value),
-    "PCM1" = -log10(full[[1]]$PCM1$p.value),
-    "GCM2" = -pchisq(unname(full[[1]]$GCM2$statistic), log.p = TRUE,
-                     df = 111, lower.tail = FALSE) / log(10),
-    "PCM2" = -pnorm(unname(full[[1]]$PCM2$statistic), log.p = TRUE,
-                    lower.tail = FALSE) / log(10)
-  )
-  cat("Negative log10 p-values\n")
-  print(pvals)
-  saveRDS(full, "inst/results/mimic-full.rds")
+### RUN with splits
+ms <- 150 * 4^(0:2)
+nsplit <- 75
+out <- dplyr::bind_rows(lapply(ms, \(nmax) {
+  res <- run_tests(splits = nsplit, max_size = nmax)
+  dplyr::bind_rows(lapply(res, \(x) unlist(lapply(x, \(y) y$p.value)))) |>
+    dplyr::mutate(n = nmax)
+}))
 
-} else {
+out |> tidyr::pivot_longer(-n) |>
+  dplyr::mutate(hypothesis = dplyr::case_when(
+    name %in% c("GCM1", "PCM1") ~ "PE~'_||_'~race~'|'~x*'-'*ray*','*~sex*','*~age",
+    name %in% c("GCM2", "PCM2") ~ "PE~'_||_'~x*'-'*ray~'|'~race*','*~sex*','*~age"
+  )) |>
+  ggplot(aes(x = ordered(n), color = stringr::str_remove(name, "[0-9]"), y = -log10(value))) +
+  geom_violin(width = 0.5, position = position_dodge(width = 0.5)) +
+  geom_boxplot(width = 0.3, position = position_dodge(width = 0.5), outlier.shape = NA) +
+  ggbeeswarm::geom_quasirandom(width = 0.1, dodge.width = 0.5, alpha = 0.3, size = 0.5) +
+  facet_wrap(~ hypothesis, labeller = label_parsed, scales = "free") +
+  labs(x = "Sample size", y = parse(text = "-log[10]~p*'-'*value"), color = "COMET") +
+  theme_bw() +
+  geom_hline(yintercept = -log10(0.05), color = "darkred", linetype = 3) +
+  scale_color_brewer(palette = "Dark2") +
+  theme(legend.position = "top")
 
-  ms <- 150 * 4^(0:2)
-  nsplit <- 75
-  out <- dplyr::bind_rows(lapply(ms, \(nmax) {
-    res <- run_tests(splits = nsplit, max_size = nmax)
-    dplyr::bind_rows(lapply(res, \(x) unlist(lapply(x, \(y) y$p.value)))) |>
-      dplyr::mutate(n = nmax)
-  }))
-
-  out |> tidyr::pivot_longer(-n) |>
-    dplyr::mutate(hypothesis = dplyr::case_when(
-      name %in% c("GCM1", "PCM1") ~ "PE~'_||_'~race~'|'~x*'-'*ray*','*~sex*','*~age",
-      name %in% c("GCM2", "PCM2") ~ "PE~'_||_'~x*'-'*ray~'|'~race*','*~sex*','*~age"
-    )) |>
-    ggplot(aes(x = ordered(n), color = stringr::str_remove(name, "[0-9]"), y = -log10(value))) +
-    geom_violin(width = 0.5, position = position_dodge(width = 0.5)) +
-    geom_boxplot(width = 0.3, position = position_dodge(width = 0.5), outlier.shape = NA) +
-    ggbeeswarm::geom_quasirandom(width = 0.1, dodge.width = 0.5, alpha = 0.3, size = 0.5) +
-    facet_wrap(~ hypothesis, labeller = label_parsed, scales = "free") +
-    labs(x = "Sample size", y = parse(text = "-log[10]~p*'-'*value"), color = "COMET") +
-    theme_bw() +
-    geom_hline(yintercept = -log10(0.05), color = "darkred", linetype = 3) +
-    scale_color_brewer(palette = "Dark2") +
-    theme(legend.position = "top")
-
-  readr::write_csv(out, "inst/results/mimic-pvals.csv")
-  ggsave("inst/figures/mimic-pval.pdf", height = 3.5, width = 6, scale = 0.85)
-
-}
+readr::write_csv(out, "inst/results/mimic-pvals.csv")
+ggsave("inst/figures/mimic-pval.pdf", height = 3.5, width = 6, scale = 0.85)

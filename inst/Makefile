@@ -1,3 +1,7 @@
+
+fig:
+	(cd .. && Rscript --vanilla inst/figures/components-overview.R > components-overview.out)
+
 dependencies:
 	(cd .. && Rscript --vanilla inst/dependencies.R > dependencies.out)
 
@@ -20,4 +24,9 @@ mul:
 	bash dispatch.sh run-multiomics.sh 3600
 
 sig:
-  bash dispatch.sh run-ccle.sh 3600
+	bash dispatch.sh run-ccle.sh 3600
+
+clean:
+	rm ../Rplots.pdf ../*.out
+
+all: dependencies fig ccle multiomics mimic

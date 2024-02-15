@@ -1,19 +1,39 @@
-#' Conditional mean independence test
+#' Projected covariance measure test for conditional mean independence
 #'
-#' @param Y Numeric; response
-#' @param X Numeric; covariates
-#' @param Z Numceric; covariates
-#' @param rep Number of repetitions
-#' @param est_vhat Estimate variance functional
-#' @param ... Additional arguments passed to \code{reg}
-#' @param reg Character; regression method
+#' @details
+#' The projected covariance measure test tests whether the conditional
+#' mean of Y given X and Z depends on X.
+#'
+#' @references
+#' Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2022). The
+#' Projected Covariance Measure for assumption-lean variable significance
+#' testing. arXiv preprint arXiv:2211.02039. \doi{10.48550/arXiv.2211.02039}
+#'
+#' @inheritParams gcm
+#' @param rep Number of repetitions with which to repeat the PCM test
+#' @param est_vhat Logical; whether to estimate the variance functional
+#' @param reg Character; regression method that can be one of
+#'     \code{"pcm_ranger"} or \code{"pcm_lasso"}.
 #' @param mtry Argument passed to \code{ranger}
-#' @param ghat_args Arguments passed to reg
-#' @param do.check Save check data
+#' @param ghat_args Arguments passed to \code{reg}
+#' @param ... Additional arguments passed to \code{ranger}
 #'
 #' @importFrom ranger ranger
 #'
-#' @return Object of class '\code{htest}'
+#' @returns Object of class '\code{pcm}' and '\code{htest}' with the following
+#' components:
+#' \itemize{
+#' \item{\code{statistic}} {The value of the test statistic.}
+#' \item{\code{p.value}} {The p-value for the \code{hypothesis}}
+#' \item{\code{parameter}} {In case X is multidimensional, this is the degrees of
+#'     freedom used for the chi-squared test.}
+#' \item{\code{hypothesis}} {Null hypothesis of conditional mean independence.}
+#' \item{\code{null.value}} {Null hypothesis of conditional mean independence.}
+#' \item{\code{method}} {The string \code{"Projected covariance measure test"}.}
+#' \item{\code{data.name}} {A character string giving the name(s) of the data.}
+#' \item{\code{check.data}} {A \code{data.frame} containing the residuals for plotting.}
+#' }
+#'
 #' @export
 #'
 #' @examples
@@ -22,19 +42,18 @@
 #' Z <- matrix(rnorm(2e3), ncol = 2)
 #' colnames(Z) <- c("Z1", "Z2")
 #' Y <- rnorm(1e3) # X[, 2] + Z[, 2] + rnorm(1e3)
-#' (pcm1 <- pcm(Y, X, Z, ghat_args = list(mtry = NULL, max.depth = NULL),
-#'     est_vhat = TRUE, do.check = TRUE))
+#' (pcm1 <- pcm(Y, X, Z))
 #' plot(pcm1)
 #'
 pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE,
                 reg = c("pcm_ranger", "pcm_lasso"),
                 ghat_args = NULL, mtry = identity,
-                do.check = FALSE, ...) {
+                ...) {
   reg <- match.arg(reg)
   if (rep != 1) {
     pcms <- lapply(seq_len(rep), \(iter) {
       pcm(Y = Y, X = X, Z = Z, rep = 1, est_vhat = est_vhat, reg = reg,
-          ghat_args = ghat_args, mtry = mtry, do.check = FALSE, ... = ...)
+          ghat_args = ghat_args, mtry = mtry, ... = ...)
     })
     stat <- mean(unlist(lapply(pcms, \(tst) tst$statistic)))
     pval <- pnorm(stat, lower.tail = FALSE)
@@ -90,41 +109,12 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE,
   if (is.nan(stat)) stat <- -Inf
   pval <- pnorm(stat, lower.tail = FALSE)
 
-  dcheck <- if (do.check) {
-    pmtilde <- predict(mtilde, data = Ztr)$predictions
-    # pvtilde <- predict(vtilde, data = cbind(Xtr, Ztr))$predictions
-    pghat_test <- predict(ghat, data = cbind(Xte, Zte))
-    mhats <- predict(mhat, data = Zte)
-    list(
-      train = data.frame(
-        id = idx,
-        fitted_ghat = pghat,
-        resid_ghat = Ytr - pghat,
-        fitted_mtilde = pmtilde,
-        resid_mtilde = pghat - pmtilde,
-        # fitted_vtilde = pvtilde,
-        # resid_vtilde = sqr - pvtilde,
-        hhat = hhat(Xtr, Ztr),
-        vhat = vhat(Xtr, Ztr),
-        MSE_YZ = (Ytr - predict(mhat, data = Ztr))^2,
-        MSE_YXZ = (Ytr - pghat)^2
-      ),
-      test = data.frame(
-        id = setdiff(seq_len(NROW(Y)), idx),
-        fitted_ghat = pghat_test,
-        resid_ghat = Yte - pghat_test,
-        hhat = hhat(Xte, Zte),
-        vhat = vhat(Xte, Zte),
-        fhat = fhats,
-        resid_mhat = (Yte - mhats),
-        mhat = mhats,
-        resid_mhatfhat = (fhats - mhatfhat$predictions),
-        mhatfhat = mhats,
-        MSE_YXZ = (Yte - pghat_test)^2,
-        MSE_YZ = (Yte - mhats)^2
-      )
-    )
-  } else NULL
+  mhats <- predict(mhat, data = Zte)
+  dcheck <- data.frame(
+    id = setdiff(seq_len(NROW(Y)), idx),
+    resid_mhat = (Yte - mhats),
+    resid_mhatfhat = (fhats - mhatfhat$predictions)
+  )
 
   structure(list(
     statistic = c("Z" = stat), p.value = pval,
@@ -173,14 +163,7 @@ predict.pcm_lasso <- function(object, data = NULL, ...) {
 #' @exportS3Method plot pcm
 plot.pcm <- function(x, ...) {
   .data <- NULL
-  train <- x$check.data$train
-  test <- x$check.data$test
-  mse_train <- data.frame(MSE_YZ = train$MSE_YZ, MSE_YXZ = train$MSE_YXZ, set = "train")
-  mse_test <- data.frame(MSE_YZ = test$MSE_YZ, MSE_YXZ = test$MSE_YXZ, set = "test")
-  mses <- tidyr::pivot_longer(dplyr::bind_rows(mse_train, mse_test),
-                              dplyr::starts_with("MSE"))
-  if (is.null(train))
-    return("Nothing to plot. Consider running `pcm` with `do.check = TRUE`")
+  test <- x$check.data
   if (requireNamespace("ggplot2") && requireNamespace("tidyr") && requireNamespace("ggpubr")) {
     mpl <- \(xx, yy, pdat, ...) {
       ggplot2::ggplot(pdat, ggplot2::aes(y = .data[[yy]], x = .data[[xx]])) +
@@ -188,25 +171,8 @@ plot.pcm <- function(x, ...) {
         ggplot2::geom_smooth(se = FALSE, method = "lm") +
         ggplot2::theme_bw()
     }
-    # ptrain <- lapply(c("ghat", "mtilde", "vtilde"), \(tx) {
-    #   mpl(paste0("fitted_", tx), paste0("resid_", tx), train, "direction")
-    # })
-    # ptest <- apply(data.frame(y = c("resid_mhatfhat", "resid_mhat"),
-    #                           x = c("mhatfhat", "resid_mhatfhat")), 1,
-    #                \(x) mpl(x[2], x[1], test), simplify = FALSE)
-    # p1 <- mpl("mhatfhat", "resid_mhatfhat", test) +
-    #   ggplot2::labs(x = "f(X,Z)", y = "Residuals f(X,Z) | Z")
     p2 <- mpl("resid_mhat", "resid_mhatfhat", test) +
       ggplot2::labs(x = "Residuals f(X, Z) | Z", y = "Residuals Y | Z")
-    p3 <- ggplot2::ggplot(mses, ggplot2::aes(y = .data[["value"]],
-                                             x = .data[["name"]],
-                                             color = .data[["set"]])) +
-      ggplot2::geom_violin(width = 0.5, position = ggplot2::position_dodge(width = 0.7)) +
-      ggplot2::geom_boxplot(width = 0.3, outlier.shape = NA, position = ggplot2::position_dodge(width = 0.7)) +
-      ggplot2::geom_jitter(alpha = 0.1, position = ggplot2::position_dodge(width = 0.7)) +
-      ggplot2::theme_bw() +
-      ggplot2::scale_y_log10() +
-      ggplot2::labs(y = "MSE contributions", x = "Regression")
     print(p2)
   }
   return(invisible(p2))

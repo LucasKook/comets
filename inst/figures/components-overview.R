@@ -97,7 +97,7 @@ colnames(X) <- c("X1")
 Z <- matrix(runif(6e2), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
 Y <- exp(X[, 1]) + Z[, 2]^3 + exp(Z[, 1]) + rnorm(3e2)
-(gcm1 <- ranger_gcm(Y, X, Z))
+(gcm1 <- gcm(Y, X, Z))
 plot(gcm1) + labs(x = "Transformation of X and Z")
 
 ggsave("inst/figures/simple-gcm.pdf", height = 2, width = 2.5)

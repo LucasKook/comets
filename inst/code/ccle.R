@@ -51,7 +51,7 @@ out <- lapply(seq_along(tgt), \(tmut) {
   pcm <- pcm(dat[, response], dat[, tgt[tmut]], dat[, c(tgt[-tmut], muts)],
              mtry = tmtry, rep = nrep, est_vhat = TRUE, ghat_args = list(
                mtry = tmtry, max.depth = tmd))
-  gcm <- ranger_gcm(dat[, response], dat[, tgt[tmut]], dat[, c(tgt[-tmut], muts)],
+  gcm <- gcm(dat[, response], dat[, tgt[tmut]], dat[, c(tgt[-tmut], muts)],
                     mtry = identity, max.depth = tmd)
   naive <- cor.test(x = dat[, tgt[tmut]], y = dat[, response])
   data.frame(gene = tgt[tmut],
@@ -64,31 +64,3 @@ out <- lapply(seq_along(tgt), \(tmut) {
 (res <- bind_rows(out))
 knitr::kable(t(res[, c("gcm", "pcm")]), col.names = res$gene,
              format = "latex", booktabs = TRUE, digits = 3)
-
-# # Subsampling -------------------------------------------------------------
-#
-# pb <- txtProgressBar(min = 0, max = length(tgt), style = 3)
-# out <- lapply(seq_along(tgt), \(tmut) {
-#   setTxtProgressBar(pb, tmut)
-#   n <- NROW(dat)
-#   folds <- sample(rep(1:2, ceiling(n/2)), n)
-#   lapply(1:2, \(iter) {
-#     tidx <- which(folds == iter)
-#     pcm <- pcm(dat[tidx, response], dat[tidx, tgt[tmut]], dat[tidx, c(tgt[-tmut], muts)],
-#                mtry = tmtry, rep = nrep, est_vhat = TRUE, ghat_args = list(
-#                  mtry = tmtry, max.depth = tmd))
-#     gcm <- ranger_gcm(dat[tidx, response], dat[tidx, tgt[tmut]], dat[tidx, c(tgt[-tmut], muts)],
-#                       mtry = identity, max.depth = tmd)
-#     naive <- cor.test(x = dat[tidx, tgt[tmut]], y = dat[tidx, response])
-#     data.frame(gene = tgt[tmut],
-#                pcm = pcm$p.value,
-#                gcm = gcm$p.value,
-#                naive = naive$p.value,
-#                fold = iter)
-#   }) |> bind_rows()
-# }) |> bind_rows()
-#
-# out |> pivot_wider(names_from = fold, values_from = pcm:naive) |>
-#   ggplot(aes(x = pcm_1, y = pcm_2)) +
-#   geom_point() +
-#   geom_abline(intercept = 0, slope = 1)
