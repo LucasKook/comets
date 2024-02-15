@@ -60,11 +60,12 @@ The projected covariance measure test tests whether the conditional
 mean of Y given X and Z depends on X.
 }
 \examples{
-X <- matrix(rnorm(2e3), ncol = 2)
+n <- 150
+X <- matrix(rnorm(2 * n), ncol = 2)
 colnames(X) <- c("X1", "X2")
-Z <- matrix(rnorm(2e3), ncol = 2)
+Z <- matrix(rnorm(2 * n), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
-Y <- rnorm(1e3) # X[, 2] + Z[, 2] + rnorm(1e3)
+Y <- rnorm(n) # X[, 2] + Z[, 2] + rnorm(1e3)
 (pcm1 <- pcm(Y, X, Z))
 plot(pcm1)
 
