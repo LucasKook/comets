@@ -9,7 +9,7 @@ Description: Covariance measure tests for conditional independence testing
     Contains versions of the generalised covariance measure test (Shah and Peters,
     2020, <doi:TODO>) and projected covariance measure test (Lundborg et al., 2023,
     <doi:TODO>). Applications can be found in Kook and Lundborg (2024, <doi:>).
-Imports: mlt, sandwich, ranger, glmnet
+Imports: ranger, glmnet
 License: GPL-3
 Encoding: UTF-8
 RoxygenNote: 7.2.3
