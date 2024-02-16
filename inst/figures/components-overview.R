@@ -69,11 +69,12 @@ ggsave("inst/figures/gcm.pdf", height = 3.3, width = 3.3)
 ggplot(pd2, aes(x = TX, y = RY)) +
   geom_point(alpha = 0.5) +
   geom_smooth(method = "lm", se = FALSE, col = "gray80") +
-  labs(x = "Transformed X", y = "Residual Y on Z",
+  labs(x = "Transformation of X and Z", y = "Residual Y on Z",
        subtitle = "PCM (correctly rejects)") +
   geom_label(aes(x = 0.3, y = 0.1,
                  label = paste0("R==", round(cor(TX, RY), 2))),
-             inherit.aes = FALSE, parse = TRUE)
+             inherit.aes = FALSE, parse = TRUE) +
+  xlim(-1.05, 1.05)
 
 ggsave("inst/figures/pcm.pdf", height = 3.3, width = 3.3)
 
