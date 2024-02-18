@@ -48,7 +48,7 @@ ggplot(pd2 |> mutate(id = 1:n) |> pivot_longer(X:Z, names_to = "Predictor",
   geom_point(alpha = 0.5) +
   geom_smooth(method = "gam", se = FALSE) +
   scale_color_brewer(palette = "Dark2") +
-  theme(legend.position = "bottom", legend.box.spacing = unit(-0.3, "cm")) +
+  theme(legend.position = "bottom", legend.box.spacing = unit(-0.2, "cm")) +
   labs(y = "Response Y", subtitle = "Y depends on X given Z",
        x = element_blank())
 
