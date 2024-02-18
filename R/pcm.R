@@ -7,7 +7,7 @@
 #' @references
 #' Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2022). The
 #' Projected Covariance Measure for assumption-lean variable significance
-#' testing. arXiv preprint arXiv:2211.02039. \doi{10.48550/arXiv.2211.02039}
+#' testing. arXiv preprint. \doi{10.48550/arXiv.2211.02039}
 #'
 #' @inheritParams gcm
 #' @param rep Number of repetitions with which to repeat the PCM test
