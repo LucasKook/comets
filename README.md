@@ -7,11 +7,11 @@
 The Generalised [1] and Projected [2] Covariance Measure tests (GCM, PCM) can be
 used to test conditional independence between a real-valued response $Y$ and
 features/modalities $X$ given additional features/modalities $Z$ in an
-algorithm-agnostic way. The `comet` R package implements these covariance
+algorithm-agnostic way. The `comets` R package implements these covariance
 measure tests (COMETs) with a user-friendly interface which allows the user to
 use any sufficiently predictive supervised learning algorithm of their choosing.
 
-Here, we showcase how to use `comet` with a simple example. More elaborate
+Here, we showcase how to use `comets` with a simple example. More elaborate
 examples including conditional variable significance testing and modality
 selection on real-world data can be found in [3].
 
@@ -26,6 +26,8 @@ Y <- X[, 1] + Z[, 2] + rnorm(n)
 (GCM <- gcm(Y, X, Z)) # plot(GCM)
 ```
 
+The output for the GCM test is shown below.
+
 ```
 #	  Generalized covariance measure test
 #
@@ -34,9 +36,13 @@ Y <- X[, 1] + Z[, 2] + rnorm(n)
 # alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
+The PCM test can be run likewise.
+
 ```r
 (PCM <- pcm(Y, X, Z)) # plot(PCM)
 ```
+
+The outut is shown below.
 
 ```
 #   Projected covariance measure test
@@ -44,6 +50,16 @@ Y <- X[, 1] + Z[, 2] + rnorm(n)
 # data:  pcm(Y = Y, X = X, Z = Z)
 # Z = 5.5807, p-value = 1.198e-08
 # alternative hypothesis: true E[Y | X, Z] is not equal to E[Y | Z]
+```
+
+The `comets` package contains an alternative formula-based interface,
+in which $H_0 : Y \perp\hspace{-5pt}\perp X \mid Z$ can be supplied
+as `Y ~ X | Z` with a corresponding `data` argument. This interface
+is implemented in `comet()` and shown below.
+
+```r
+dat <- data.frame(Y = Y, X, Z)
+comet(Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
 ```
 
 # Replication materials

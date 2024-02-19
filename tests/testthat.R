@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/reference/test_package.html#special-files
 
 library("testthat")
-library("comet")
+library("comets")
 
-test_check("comet")
+test_check("comets")

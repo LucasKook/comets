@@ -44,12 +44,14 @@
 #' colnames(Z) <- c("Z1", "Z2")
 #' Y <- rnorm(n) # X[, 2] + Z[, 2] + rnorm(1e3)
 #' (pcm1 <- pcm(Y, X, Z))
-#' plot(pcm1)
 #'
 pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE,
                 reg = c("pcm_ranger", "pcm_lasso"),
                 ghat_args = NULL, mtry = identity,
                 ...) {
+  Y <- .check_data(Y, "Y")
+  X <- .check_data(X, "X")
+  Z <- .check_data(Z, "Z")
   reg <- match.arg(reg)
   if (rep != 1) {
     pcms <- lapply(seq_len(rep), \(iter) {

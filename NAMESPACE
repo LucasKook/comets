@@ -2,6 +2,7 @@
 
 S3method(plot,gcm)
 S3method(plot,pcm)
+export(comet)
 export(gcm)
 export(pcm)
 importFrom(glmnet,cv.glmnet)

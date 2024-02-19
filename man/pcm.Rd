@@ -67,7 +67,6 @@ Z <- matrix(rnorm(2 * n), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
 Y <- rnorm(n) # X[, 2] + Z[, 2] + rnorm(1e3)
 (pcm1 <- pcm(Y, X, Z))
-plot(pcm1)
 
 }
 \references{

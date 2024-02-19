@@ -11,5 +11,5 @@ pkgs <- c("tidyverse", "ranger", "mlt", "sandwich", "glmnet", "tram",
           "reticulate", "mgcv", "survival")
 remotes::install_cran(pkgs)
 
-### Install comet
+### Install comets
 remotes::install_local(force = TRUE)

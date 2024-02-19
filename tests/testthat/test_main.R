@@ -1,11 +1,12 @@
 
 test_that(".ranger works", {
   set.seed(12)
-  dat <- data.frame(bin = factor(sample(0:1, 1e3, TRUE)),
-                    ord = ordered(sample(7:10, 1e3, TRUE)),
-                    mcc = factor(sample(11:15, 1e3, TRUE)),
-                    num = rnorm(1e3),
-                    x = rnorm(1e3))
+  tn <- 1e3
+  dat <- data.frame(bin = factor(sample(0:1, tn, TRUE)),
+                    ord = ordered(sample(7:10, tn, TRUE)),
+                    mcc = factor(sample(11:15, tn, TRUE)),
+                    num = rnorm(tn),
+                    x = rnorm(tn))
   lapply(colnames(dat)[-ncol(dat)], \(resp) {
     fm <- reformulate("x", resp)
     rf <- .ranger(fm, data = dat)
@@ -16,13 +17,45 @@ test_that(".ranger works", {
 
 test_that("gcm and pcm work", {
   expect_no_error({
+    tn <- 3e2
     set.seed(12)
-    X <- matrix(rnorm(2e3), ncol = 2)
+    X <- matrix(rnorm(2 * tn), ncol = 2)
     colnames(X) <- c("X1", "X2")
-    Z <- matrix(rnorm(2e3), ncol = 2)
+    Z <- matrix(rnorm(2 * tn), ncol = 2)
     colnames(Z) <- c("Z1", "Z2")
-    Y <- rnorm(1e3)
+    Y <- rnorm(tn)
     gcm1 <- gcm(Y, X, Z)
     pcm1 <- pcm(Y, X, Z)
   })
+})
+
+test_that("comet", {
+  set.seed(42)
+  data("mtcars")
+  expect_no_error(comet(mpg ~ cyl | disp, data = mtcars))
+  expect_no_error(comet(factor(vs) ~ cyl | disp, data = mtcars))
+  expect_error(comet(factor(mpg) ~ cyl | disp, data = mtcars))
+})
+
+test_that("gcm pcm data types", {
+  expect_no_error({
+    set.seed(12)
+    tn <- 3e2
+    X <- rnorm(tn)
+    Z <- rnorm(tn)
+    Y <- rnorm(tn)
+    gcm1 <- gcm(Y, X, Z)
+    pcm1 <- pcm(Y, X, Z)
+    gcm2 <- gcm(Y, cbind(X, rnorm(tn)), cbind(Z, rnorm(tn)))
+    gcm2 <- gcm(Y, as.data.frame(X), as.data.frame(Z))
+  })
+})
+
+test_that("check data works", {
+  tmp <- rnorm(10)
+  expect_equal(NCOL(cY <- .check_data(tmp, "Y")), 1)
+  expect_null(colnames(cY))
+  expect_equal(ncol(cX <- .check_data(tmp, "X")), 1)
+  expect_equal(colnames(cX), "X1")
+  expect_equal(NCOL(.check_data(cbind(tmp, tmp), "Z")), 2)
 })

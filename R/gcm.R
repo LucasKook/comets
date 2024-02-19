@@ -43,13 +43,16 @@
 #' (gcm1 <- gcm(Y, X, Z))
 #'
 gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"), ...) {
+  Y <- .check_data(Y, "Y")
+  X <- .check_data(X, "X")
+  Z <- .check_data(Z, "Z")
   alternative <- match.arg(alternative)
   args <- if (length(list(...)) > 0) list(...) else NULL
   YZ <- do.call("pcm_ranger", c(list(y = Y, x = Z), args))
   XZ <- apply(as.data.frame(X), 2, \(tX) {
     do.call("pcm_ranger", c(list(y = tX, x = Z), args))
   })
-  rY <- Y - predict(YZ, data = Z)
+  rY <- .compute_residuals(Y, predict(YZ, data = Z))
   preds <- lapply(XZ, predict.pcm_ranger, data = Z)
   rX <- X - do.call("cbind", preds)
   stat <- .gcm(rY, rX)
@@ -75,6 +78,32 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"), ...) {
 }
 
 # Helpers -----------------------------------------------------------------
+
+.compute_residuals <- function(y, pred) {
+  if (is.factor(y) && length(levels(y)) == 2)
+    y <- as.numeric(y) - 1
+  y - pred
+}
+
+.check_data <- function(x, mode = c("Y", "X", "Z")) {
+  mode <- match.arg(mode)
+  if (mode == "Y") {
+    N <- NROW(x)
+    ret <- c(x)
+    if (is.factor(ret) && length(levels(ret)) > 2)
+      stop("Only binary factors are allowed for Y.")
+    if (N != NROW(ret))
+      stop("Please provide Y as a vector.")
+    return(ret)
+  }
+  if ("tibble" %in% class(x))
+    x <- as.data.frame(x)
+  if (NCOL(x) == 1)
+    x <- as.matrix(x)
+  if (is.null(colnames(x)))
+    colnames(x) <- paste0(mode, seq_len(NCOL(x)))
+  x
+}
 
 .gcm <- function (r, e) {
   dR <- NCOL(r)
