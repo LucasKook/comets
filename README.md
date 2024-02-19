@@ -84,7 +84,7 @@ predict.my_regression <- function(object, data, ...) {
 ```
 
 The input `y` and `x` and `data` are vector and matrix-valued. The output of 
-`predict.my_regression()` should be a vector of `NROW(data)`.
+`predict.my_regression()` should be a vector of length `NROW(data)`.
 
 # Replication materials
 
