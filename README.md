@@ -43,7 +43,7 @@ The PCM test can be run likewise.
 (PCM <- pcm(Y, X, Z)) # plot(PCM)
 ```
 
-The outut is shown below.
+The output is shown below.
 
 ```
 #   Projected covariance measure test
@@ -79,7 +79,7 @@ my_regression <- function(y, x, ...) {
 }
 
 predict.my_regression <- function(object, data, ...) {
-  <run the prediction rountine>
+  <run the prediction routine>
 }
 ```
 

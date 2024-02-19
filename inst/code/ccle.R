@@ -3,6 +3,7 @@
 
 bpath <- "inst/data/ccle"
 set.seed(2410)
+do_screen <- TRUE
 
 # DEPs --------------------------------------------------------------------
 
@@ -32,7 +33,8 @@ cors <- apply(mut, 1, \(muts) {
   ifelse(!is.na(tc), tc, 0)
 })
 
-screen <- cors[abs(cors) > 0.05 & !is.na(cors)]
+screen <- if (do_screen) cors[abs(cors) > 0.05 & !is.na(cors)] else
+  cors[!is.na(cors)]
 dat <- data.frame(Y = resp$Amax, t(mut[names(screen),]))
 
 # Run ---------------------------------------------------------------------
@@ -59,3 +61,6 @@ out <- lapply(seq_along(tgt), \(tmut) {
 (res <- bind_rows(out))
 knitr::kable(t(res[, c("gcm", "pcm")]), col.names = res$gene,
              format = "latex", booktabs = TRUE, digits = 3)
+
+### Save
+write.csv(res, "inst/results/ccle-results.csv")
