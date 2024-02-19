@@ -2,6 +2,8 @@
 
 S3method(plot,gcm)
 S3method(plot,pcm)
+S3method(predict,lasso)
+S3method(predict,rf)
 export(comet)
 export(gcm)
 export(pcm)

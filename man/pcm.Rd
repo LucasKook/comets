@@ -10,8 +10,10 @@ pcm(
   Z,
   rep = 1,
   est_vhat = TRUE,
-  reg = c("pcm_ranger", "pcm_lasso"),
-  ghat_args = NULL,
+  reg_YonXZ = "rf",
+  reg_YonZ = "rf",
+  args_YonXZ = NULL,
+  args_YonZ = NULL,
   mtry = identity,
   ...
 )
@@ -28,10 +30,15 @@ a single column matrix.}
 
 \item{est_vhat}{Logical; whether to estimate the variance functional}
 
-\item{reg}{Character; regression method that can be one of
-\code{"pcm_ranger"} or \code{"pcm_lasso"}.}
+\item{reg_YonXZ}{Character string or function specifying the regression
+for Y on X and Z, default is \code{"rf"} for random forest.}
 
-\item{ghat_args}{Arguments passed to \code{reg}}
+\item{reg_YonZ}{Character string or function specifying the regression
+for Y on Z, default is \code{"rf"} for random forest.}
+
+\item{args_YonXZ}{Arguments passed to \code{reg}}
+
+\item{args_YonZ}{Arguments passed to \code{reg}}
 
 \item{mtry}{Argument passed to \code{ranger}}
 

@@ -4,7 +4,16 @@
 \alias{gcm}
 \title{Generalised covariance measure test using random forests}
 \usage{
-gcm(Y, X, Z, alternative = c("two.sided", "less", "greater"), ...)
+gcm(
+  Y,
+  X,
+  Z,
+  alternative = c("two.sided", "less", "greater"),
+  reg_YonZ = "rf",
+  reg_XonZ = "rf",
+  args_XonZ = NULL,
+  ...
+)
 }
 \arguments{
 \item{Y}{Vector of response values. Can be supplied as a numeric vector or
@@ -18,7 +27,15 @@ a single column matrix.}
 must be one of \code{"two.sided"} (default), \code{"greater"} or
 \code{"less"}}
 
-\item{...}{Additional arguments passed to ranger}
+\item{reg_YonZ}{Character string or function specifying the regression for
+Y on Z.}
+
+\item{reg_XonZ}{Character string or function specifying the regression for
+X on Z.}
+
+\item{args_XonZ}{Additional arguments passed to \code{reg_XonZ}.}
+
+\item{...}{Additional arguments passed to \code{reg_YonZ}}
 }
 \value{
 Object of class '\code{gcm}' and '\code{htest}' with the following

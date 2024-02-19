@@ -10,6 +10,7 @@ features/modalities $X$ given additional features/modalities $Z$ in an
 algorithm-agnostic way. The `comets` R package implements these covariance
 measure tests (COMETs) with a user-friendly interface which allows the user to
 use any sufficiently predictive supervised learning algorithm of their choosing.
+The default is to use random forests implemented in `ranger` for all regressions.
 
 Here, we showcase how to use `comets` with a simple example. More elaborate
 examples including conditional variable significance testing and modality
@@ -61,6 +62,29 @@ is implemented in `comet()` and shown below.
 dat <- data.frame(Y = Y, X, Z)
 comet(Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
 ```
+
+Different regression methods can supplied for both GCM and PCM tests
+using the `reg_*` arguments (for instance, `reg_YonZ` in `gcm()` for
+the regression of $Y$ on $Z$). Pre-implemented regressions are `"rf"`
+for random forests and `"lasso"` for cross-validated $L_1$-penalized
+regression. Custom regression functions can be supplied as character
+strings or functions, require a `predict()` method and the following
+structure:
+
+```
+my_regression <- function(y, x, ...) {
+  ret <- <run the regression>
+  class(ret) <- "my_regression"
+  ret
+}
+
+predict.my_regression <- function(object, data, ...) {
+  <run the prediction rountine>
+}
+```
+
+The input `y` and `x` and `data` are vector and matrix-valued. The output of 
+`predict.my_regression()` should be a vector of `NROW(data)`.
 
 # Replication materials
 

@@ -12,10 +12,13 @@
 #' @inheritParams gcm
 #' @param rep Number of repetitions with which to repeat the PCM test
 #' @param est_vhat Logical; whether to estimate the variance functional
-#' @param reg Character; regression method that can be one of
-#'     \code{"pcm_ranger"} or \code{"pcm_lasso"}.
+#' @param reg_YonXZ Character string or function specifying the regression
+#'     for Y on X and Z, default is \code{"rf"} for random forest.
+#' @param reg_YonZ Character string or function specifying the regression
+#'     for Y on Z, default is \code{"rf"} for random forest.
 #' @param mtry Argument passed to \code{ranger}
-#' @param ghat_args Arguments passed to \code{reg}
+#' @param args_YonXZ Arguments passed to \code{reg}
+#' @param args_YonZ Arguments passed to \code{reg}
 #' @param ... Additional arguments passed to \code{ranger}
 #'
 #' @importFrom ranger ranger
@@ -45,18 +48,17 @@
 #' Y <- rnorm(n) # X[, 2] + Z[, 2] + rnorm(1e3)
 #' (pcm1 <- pcm(Y, X, Z))
 #'
-pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE,
-                reg = c("pcm_ranger", "pcm_lasso"),
-                ghat_args = NULL, mtry = identity,
-                ...) {
+pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
+                reg_YonZ = "rf", args_YonXZ = NULL, args_YonZ = NULL,
+                mtry = identity, ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
-  reg <- match.arg(reg)
   if (rep != 1) {
     pcms <- lapply(seq_len(rep), \(iter) {
-      pcm(Y = Y, X = X, Z = Z, rep = 1, est_vhat = est_vhat, reg = reg,
-          ghat_args = ghat_args, mtry = mtry, ... = ...)
+      pcm(Y = Y, X = X, Z = Z, rep = 1, est_vhat = est_vhat,
+          reg_YonXZ = reg_YonXZ, reg_YonZ = reg_YonZ, args_YonXZ = args_YonXZ,
+          args_YonZ = args_YonZ, mtry = mtry, ... = ...)
     })
     stat <- mean(unlist(lapply(pcms, \(tst) tst$statistic)))
     pval <- pnorm(stat, lower.tail = FALSE)
@@ -80,7 +82,7 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE,
   Zte <- data.frame(Z)[-idx, , drop = FALSE]
 
   ### Obtain hat{h}
-  ghat <- do.call(reg, c(list(y = Ytr, x = cbind(Xtr, Ztr)), ghat_args))
+  ghat <- do.call(reg_YonXZ, c(list(y = Ytr, x = cbind(Xtr, Ztr)), args_YonXZ))
   mtilde <- ranger(x = Ztr, y = pghat <- predict(ghat, data = cbind(Xtr, Ztr)),
                    mtry = mtry, ...)
   htilde <- \(X, Z) {
@@ -104,7 +106,7 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE,
   ### Obtain residuals for test
   fhat <- \(X, Z) hhat(X, Z) / vhat(X, Z)
   mhatfhat <- ranger(x = Zte, y = (fhats <- fhat(Xte, Zte)), mtry = mtry, ...)
-  mhat <- do.call(reg, c(list(y = Yte, x = Zte), ghat_args))
+  mhat <- do.call(reg_YonZ, c(list(y = Yte, x = Zte), args_YonZ))
 
   ### Test
   L <- (Yte - predict(mhat, data = Zte)) * (fhats - mhatfhat$predictions)
@@ -130,18 +132,19 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE,
 
 # Regressions -------------------------------------------------------------
 
-pcm_ranger <- function(y, x, ...) {
+rf <- function(y, x, ...) {
   args <- list(...)
   if (length(unique(y)) == 2) {
     y <- as.factor(y)
     args$probability <- TRUE
   }
   rf <- do.call("ranger", c(list(y = y, x = x), args))
-  class(rf) <- c("pcm_ranger", class(rf))
+  class(rf) <- c("rf", class(rf))
   rf
 }
 
-predict.pcm_ranger <- function(object, data = NULL, ...) {
+#' @exportS3Method predict rf
+predict.rf <- function(object, data = NULL, ...) {
   class(object) <- class(object)[-1]
   preds <- predict(object, data = data)$predictions
   if (object$treetype == "Probability estimation")
@@ -150,13 +153,14 @@ predict.pcm_ranger <- function(object, data = NULL, ...) {
 }
 
 #' @importFrom glmnet cv.glmnet
-pcm_lasso <- function(y, x, ...) {
+lasso <- function(y, x, ...) {
   obj <- cv.glmnet(y = y, x = as.matrix(x), ...)
-  class(obj) <- c("pcm_lasso", class(obj))
+  class(obj) <- c("lasso", class(obj))
   obj
 }
 
-predict.pcm_lasso <- function(object, data = NULL, ...) {
+#' @exportS3Method predict lasso
+predict.lasso <- function(object, data = NULL, ...) {
   class(object) <- class(object)[-1]
   predict(object, newx = as.matrix(data), s = object$lambda.min)[, 1]
 }

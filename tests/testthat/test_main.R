@@ -59,3 +59,33 @@ test_that("check data works", {
   expect_equal(colnames(cX), "X1")
   expect_equal(NCOL(.check_data(cbind(tmp, tmp), "Z")), 2)
 })
+
+test_that("GCM with different regressions", {
+  expect_no_error({
+    set.seed(12)
+    tn <- 3e2
+    set.seed(12)
+    X <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(X) <- c("X1", "X2")
+    Z <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(Z) <- c("Z1", "Z2")
+    Y <- rnorm(tn)
+    gcm1 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "lasso")
+    gcm2 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "rf")
+  })
+})
+
+test_that("PCM with different regressions", {
+  expect_no_error({
+    set.seed(12)
+    tn <- 3e2
+    set.seed(12)
+    X <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(X) <- c("X1", "X2")
+    Z <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(Z) <- c("Z1", "Z2")
+    Y <- rnorm(tn)
+    pcm1 <- pcm(Y, X, Z, reg_YonXZ = "lasso", reg_YonZ = "lasso")
+    pcm2 <- pcm(Y, X, Z, reg_YonXZ = "rf", reg_YonZ = "lasso")
+  })
+})

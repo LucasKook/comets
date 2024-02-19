@@ -37,24 +37,22 @@ rm(list = c("mir", "rna", "surv", "meth"))
 # Run ---------------------------------------------------------------------
 
 response <- "surv"
-names_mir <- grep("^mir", colnames(dat), value = TRUE)
-names_rna <- grep("^rna", colnames(dat), value = TRUE)
-names_meth <- grep("^meth", colnames(dat), value = TRUE)
+n_mir <- grep("^mir", colnames(dat), value = TRUE)
+n_rna <- grep("^rna", colnames(dat), value = TRUE)
+n_meth <- grep("^meth", colnames(dat), value = TRUE)
 
-rargs <- list(mtry = NULL, max.depth = NULL, probability = TRUE)
-tmtry <- NULL
 nrep <- 10
 
-(t1 <- pcm(dat[, response][, 2], dat[, names_rna], dat[, c(names_mir, names_meth)],
-           mtry = tmtry, rep = nrep, est_vhat = TRUE, ghat_args = rargs))
-(t2 <- pcm(dat[, response][, 2], dat[, names_mir], dat[, c(names_rna, names_meth)],
-           mtry = tmtry, rep = nrep, est_vhat = TRUE, ghat_args = rargs))
-(t3 <- pcm(dat[, response][, 2], dat[, names_meth], dat[, c(names_rna, names_mir)],
-           mtry = tmtry, rep = nrep, est_vhat = TRUE, ghat_args = rargs))
+(t1 <- pcm(dat[, response][, 2], dat[, n_rna], dat[, c(n_mir, n_meth)],
+           rep = nrep))
+(t2 <- pcm(dat[, response][, 2], dat[, n_mir], dat[, c(n_rna, n_meth)],
+           rep = nrep))
+(t3 <- pcm(dat[, response][, 2], dat[, n_meth], dat[, c(n_rna, n_mir)],
+           rep = nrep))
 
-(t4 <- pcm(dat[, response][, 2], dat[, names_rna], dat[, c(names_mir, names_meth)],
-           mtry = tmtry, rep = nrep, est_vhat = TRUE, reg = "pcm_lasso"))
-(t5 <- pcm(dat[, response][, 2], dat[, names_mir], dat[, c(names_rna, names_meth)],
-           mtry = tmtry, rep = nrep, est_vhat = TRUE, reg = "pcm_lasso"))
-(t6 <- pcm(dat[, response][, 2], dat[, names_meth], dat[, c(names_rna, names_mir)],
-           mtry = tmtry, rep = nrep, est_vhat = TRUE, reg = "pcm_lasso"))
+(t4 <- pcm(dat[, response][, 2], dat[, n_rna], dat[, c(n_mir, n_meth)],
+           rep = nrep, reg = "lasso"))
+(t5 <- pcm(dat[, response][, 2], dat[, n_mir], dat[, c(n_rna, n_meth)],
+           rep = nrep, reg = "lasso"))
+(t6 <- pcm(dat[, response][, 2], dat[, n_meth], dat[, c(n_rna, n_mir)],
+           rep = nrep, reg = "lasso"))

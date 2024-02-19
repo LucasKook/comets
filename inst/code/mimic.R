@@ -73,10 +73,6 @@ nX <- "race"
 nC <- c("sex", "age")
 nZ <- paste0("V", 1:red)
 
-### RF params
-tmtry <- NULL # \(n) ceiling(sqrt(n))
-rargs <- list(mtry = NULL, max.depth = NULL)
-
 ### Test function
 run_tests <- function(splits = 20, max_size = 1e4, verbose = FALSE) {
   pb <- txtProgressBar(min = 0, max = splits, style = 3)
@@ -90,23 +86,17 @@ run_tests <- function(splits = 20, max_size = 1e4, verbose = FALSE) {
     nemb <- emb[idx, ]
 
     ### Test resp _||_ race | emb, age, sex ### GCM/PCM
-    gcm1 <- gcm(nemb[, nY], .mm(nX, nemb), .mm(c(nZ, nC), nemb),
-                       mtry = rargs$mtry, max.depth = rargs$max.depth)
+    gcm1 <- gcm(nemb[, nY], .mm(nX, nemb), .mm(c(nZ, nC), nemb))
     if (verbose)
       cat("\nGCM1 done")
-    pcm1 <- pcm(nemb[, nY], .mm(nX, nemb), .mm(c(nZ, nC), nemb), rep = nrep,
-                mtry = tmtry, est_vhat = TRUE, ghat_args = c(rargs, list(
-                  probability = TRUE)), do.check = FALSE)
+    pcm1 <- pcm(nemb[, nY], .mm(nX, nemb), .mm(c(nZ, nC), nemb), rep = nrep)
     if (verbose)
       cat("\nPCM1 done")
     ### Test resp _||_ emb | race, age, sex ### GCM/PCM
-    gcm2 <- gcm(nemb[, nY], .mm(nZ, nemb), .mm(c(nX, nC), nemb),
-                       mtry = rargs$mtry, max.depth = rargs$max.depth)
+    gcm2 <- gcm(nemb[, nY], .mm(nZ, nemb), .mm(c(nX, nC), nemb))
     if (verbose)
       cat("\nGCM2 done")
-    pcm2 <- pcm(nemb[, nY], .mm(nZ, nemb), .mm(c(nX, nC), nemb), rep = nrep,
-                mtry = tmtry, est_vhat = TRUE, ghat_args = c(rargs, list(
-                  probability = TRUE)), do.check = FALSE)
+    pcm2 <- pcm(nemb[, nY], .mm(nZ, nemb), .mm(c(nX, nC), nemb), rep = nrep)
     if (verbose)
       cat("\nPCM2 done")
     ### Return

@@ -42,17 +42,12 @@ tgt <- paste0(c("BRAF.V600E", "BRAF.MC", "HIP1", "FLT3", "CDC42BPA",
                 "THBS3", "DNMT1", "PRKD1", "PIP5K1A", "MAP3K5"), "_MUT")
 muts <- setdiff(colnames(dat), c(response, tgt))
 
-tmtry <- NULL
-tmd <- NULL
-
 pb <- txtProgressBar(min = 0, max = length(tgt), style = 3)
 out <- lapply(seq_along(tgt), \(tmut) {
   setTxtProgressBar(pb, tmut)
   pcm <- pcm(dat[, response], dat[, tgt[tmut]], dat[, c(tgt[-tmut], muts)],
-             mtry = tmtry, rep = nrep, est_vhat = TRUE, ghat_args = list(
-               mtry = tmtry, max.depth = tmd))
-  gcm <- gcm(dat[, response], dat[, tgt[tmut]], dat[, c(tgt[-tmut], muts)],
-                    mtry = identity, max.depth = tmd)
+             rep = nrep)
+  gcm <- gcm(dat[, response], dat[, tgt[tmut]], dat[, c(tgt[-tmut], muts)])
   naive <- cor.test(x = dat[, tgt[tmut]], y = dat[, response])
   data.frame(gene = tgt[tmut],
              pcm = pcm$p.value,

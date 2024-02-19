@@ -16,7 +16,12 @@
 #' @param alternative A character string specifying the alternative hypothesis,
 #'     must be one of \code{"two.sided"} (default), \code{"greater"} or
 #'     \code{"less"}
-#' @param ... Additional arguments passed to ranger
+#' @param reg_YonZ Character string or function specifying the regression for
+#'     Y on Z.
+#' @param reg_XonZ Character string or function specifying the regression for
+#'     X on Z.
+#' @param args_XonZ Additional arguments passed to \code{reg_XonZ}.
+#' @param ... Additional arguments passed to \code{reg_YonZ}
 #'
 #' @returns Object of class '\code{gcm}' and '\code{htest}' with the following
 #' components:
@@ -42,18 +47,19 @@
 #' Y <- rnorm(1e3) # X[, 2] + Z[, 2] + rnorm(1e3)
 #' (gcm1 <- gcm(Y, X, Z))
 #'
-gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"), ...) {
+gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
+                reg_YonZ = "rf", reg_XonZ = "rf", args_XonZ = NULL, ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
   alternative <- match.arg(alternative)
   args <- if (length(list(...)) > 0) list(...) else NULL
-  YZ <- do.call("pcm_ranger", c(list(y = Y, x = Z), args))
+  YZ <- do.call(reg_YonZ, c(list(y = Y, x = Z), args))
   XZ <- apply(as.data.frame(X), 2, \(tX) {
-    do.call("pcm_ranger", c(list(y = tX, x = Z), args))
+    do.call(reg_XonZ, c(list(y = tX, x = Z), args_XonZ))
   })
   rY <- .compute_residuals(Y, predict(YZ, data = Z))
-  preds <- lapply(XZ, predict.pcm_ranger, data = Z)
+  preds <- lapply(XZ, predict, data = Z)
   rX <- X - do.call("cbind", preds)
   stat <- .gcm(rY, rX)
   pval <- .compute_normal_pval(stat, alternative)
