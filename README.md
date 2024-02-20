@@ -13,9 +13,10 @@ interface which allows the user to use any sufficiently predictive supervised
 learning algorithm of their choosing. The default is to use random forests
 implemented in `ranger` for all regressions.
 
-Here, we showcase how to use `comets` with a simple example. More elaborate
-examples including conditional variable significance testing and modality
-selection on real-world data can be found in [3].
+Here, we showcase how to use `comets` with a simple example in which $Y$ is
+not independent of $X$ given $Z$. More elaborate examples including conditional
+variable significance testing and modality selection on real-world data can be
+found in [3].
 
 ```r
 set.seed(1)
@@ -24,17 +25,20 @@ X <- matrix(rnorm(2 * n), ncol = 2)
 colnames(X) <- c("X1", "X2")
 Z <- matrix(rnorm(2 * n), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
-Y <- X[, 1] + Z[, 2] + rnorm(n)
+Y <- X[, 1]^2 + Z[, 2] + rnorm(n)
 (GCM <- gcm(Y, X, Z)) # plot(GCM)
 ```
 
-The output for the GCM test is shown below.
+The output for the GCM test, which fails to reject the null hypothesis of
+conditional independence in this example, is shown below. The residuals
+for the $Y$ on $Z$ and $X$ on $Z$ regressions can be investigated by
+calling `plot(GCM)` (not shown here).
 
 ```
-#	  Generalized covariance measure test
+#   Generalized covariance measure test
 #
 # data:  gcm(Y = Y, X = X, Z = Z)
-# X-squared = 87.974, df = 2, p-value < 2.2e-16
+# X-squared = 2.8689, df = 2, p-value = 0.2382
 # alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
@@ -44,13 +48,14 @@ The PCM test can be run likewise.
 (PCM <- pcm(Y, X, Z)) # plot(PCM)
 ```
 
-The output is shown below.
+The output is shown below: The PCM test correctly rejects the null hypothesis of
+conditional independence in this example.
 
 ```
 #   Projected covariance measure test
 #
 # data:  pcm(Y = Y, X = X, Z = Z)
-# Z = 5.5807, p-value = 1.198e-08
+# Z = 5.274, p-value = 6.674e-08
 # alternative hypothesis: true E[Y | X, Z] is not equal to E[Y | Z]
 ```
 
@@ -84,7 +89,7 @@ predict.my_regression <- function(object, data, ...) {
 }
 ```
 
-The input `y` and `x` and `data` are vector and matrix-valued. The output of 
+The input `y` and `x` and `data` are vector and matrix-valued. The output of
 `predict.my_regression()` should be a vector of length `NROW(data)`.
 
 # Replication materials
@@ -104,4 +109,4 @@ arXiv preprint.
 [doi:10.48550/arXiv.2211.02039](https://doi.org/10.48550/arXiv.2211.02039)
 
 [3] Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance testing in
-supervised learning with multimodal data. 
+supervised learning with multimodal data.
