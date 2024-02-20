@@ -6,11 +6,12 @@
 
 The Generalised [1] and Projected [2] Covariance Measure tests (GCM, PCM) can be
 used to test conditional independence between a real-valued response $Y$ and
-features/modalities $X$ given additional features/modalities $Z$ in an
-algorithm-agnostic way. The `comets` R package implements these covariance
-measure tests (COMETs) with a user-friendly interface which allows the user to
-use any sufficiently predictive supervised learning algorithm of their choosing.
-The default is to use random forests implemented in `ranger` for all regressions.
+features/modalities $X$ given additional features/modalities $Z$ using any
+sufficiently predictive supervised learning algorithms. The `comets` R package
+implements these covariance measure tests (COMETs) with a user-friendly
+interface which allows the user to use any sufficiently predictive supervised
+learning algorithm of their choosing. The default is to use random forests
+implemented in `ranger` for all regressions.
 
 Here, we showcase how to use `comets` with a simple example. More elaborate
 examples including conditional variable significance testing and modality
