@@ -62,6 +62,9 @@ if (file.exists(temb <- file.path(bpath, "emb.csv"))) {
   name_resp <- "Pleural Effusion"
   emb$resp <- emb[[name_resp]]
 
+  emb <- emb |> dplyr::select(
+    dplyr::matches(name_resp), sex, age, race, dplyr::starts_with("V"))
+
   write_csv(emb, temb)
 }
 

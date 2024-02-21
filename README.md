@@ -104,8 +104,8 @@ remotes::install_github("LucasKook/comets")
 # Replication materials
 
 All results in [3] can be reproduced by running `make all` in `./inst`
-after downloading all required data sets following the instructions 
-given [here](TODO).
+after downloading all required data from the 
+[zenodo repository](https://doi.org/10.5281/zenodo.10689554).
 
 # References
 
