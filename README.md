@@ -92,10 +92,20 @@ predict.my_regression <- function(object, data, ...) {
 The input `y` and `x` and `data` are vector and matrix-valued. The output of
 `predict.my_regression()` should be a vector of length `NROW(data)`.
 
+# Installation
+
+The development version of `comets` can be installed using:
+
+```r
+# install.packages("remotes")
+remotes::install_github("LucasKook/comets")
+```
+
 # Replication materials
 
 All results in [3] can be reproduced by running `make all` in `./inst`
-after downloading all required data sets available [here](TODO).
+after downloading all required data sets following the instructions 
+given [here](TODO).
 
 # References
 

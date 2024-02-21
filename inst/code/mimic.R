@@ -15,7 +15,7 @@ devtools::load_all()
 # Read data ---------------------------------------------------------------
 
 ## Read meta data
-bpath <- "inst/data/mimic/MIMIC"
+bpath <- "inst/data/mimic"
 
 if (file.exists(temb <- file.path(bpath, "emb.csv"))) {
   emb <- as.data.frame(read_csv(temb))
