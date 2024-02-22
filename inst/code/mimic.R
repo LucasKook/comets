@@ -5,6 +5,9 @@ set.seed(2410)
 nrep <- 5
 red <- 111 # 98% variance
 
+if (!dir.exists("inst/results"))
+  dir.create("inst/results")
+
 # Dependencies ------------------------------------------------------------
 
 library("readr")

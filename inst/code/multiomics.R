@@ -4,6 +4,9 @@
 bpath <- "inst/data/multiomics"
 set.seed(2410)
 
+if (!dir.exists("inst/results"))
+  dir.create("inst/results")
+
 # DEPs --------------------------------------------------------------------
 
 library("tidyverse")

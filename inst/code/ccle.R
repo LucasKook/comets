@@ -5,6 +5,9 @@ bpath <- "inst/data/ccle"
 set.seed(2410)
 do_screen <- TRUE
 
+if (!dir.exists("inst/results"))
+  dir.create("inst/results")
+
 # DEPs --------------------------------------------------------------------
 
 library("tidyverse")
