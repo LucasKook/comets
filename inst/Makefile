@@ -3,16 +3,16 @@ fig:
 	(cd .. && Rscript --vanilla inst/figures/components-overview.R > components-overview.out)
 
 dependencies:
-	(cd .. && Rscript --vanilla inst/dependencies.R > dependencies.out)
+	(cd .. && Rscript --vanilla inst/code/dependencies.R > dependencies.out)
 
 mimic:
-	(cd .. && Rscript --vanilla inst/application/mimic.R > mimic.out)
+	(cd .. && Rscript --vanilla inst/code/mimic.R > mimic.out)
 
 multiomics:
-	(cd .. && Rscript --vanilla inst/application/multiomics.R > multiomics.out)
+	(cd .. && Rscript --vanilla inst/code/multiomics.R > multiomics.out)
 
 ccle:
-	(cd .. && Rscript --vanilla inst/application/ccle.R > ccle.out)
+	(cd .. && Rscript --vanilla inst/code/ccle.R > ccle.out)
 
 dep:
 	bash dispatch.sh run-install.sh 1200
