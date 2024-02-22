@@ -74,7 +74,7 @@ if (file.exists(temb <- file.path(bpath, "emb.csv"))) {
 # Test --------------------------------------------------------------------
 
 ### Variables
-nY <- "resp"
+nY <- "Pleural Effusion"
 nX <- "race"
 nC <- c("sex", "age")
 nZ <- paste0("V", 1:red)
