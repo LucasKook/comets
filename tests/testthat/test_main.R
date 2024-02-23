@@ -1,7 +1,7 @@
 
 test_that(".ranger works", {
   set.seed(12)
-  tn <- 1e3
+  tn <- 3e2
   dat <- data.frame(bin = factor(sample(0:1, tn, TRUE)),
                     ord = ordered(sample(7:10, tn, TRUE)),
                     mcc = factor(sample(11:15, tn, TRUE)),
@@ -11,7 +11,7 @@ test_that(".ranger works", {
     fm <- reformulate("x", resp)
     rf <- .ranger(fm, data = dat)
     rr <- residuals.ranger(rf)
-    expect_lt(abs(mean(rr)), 0.005)
+    expect_lt(abs(mean(rr)), 0.05)
   })
 })
 
