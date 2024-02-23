@@ -32,3 +32,8 @@ tn <- 3e2
 df <- data.frame(y = rnorm(tn), x1 = rnorm(tn), x2 = rnorm(tn), z = rnorm(tn))
 comet(y ~ x1 + x2 | z, data = df, test = "gcm")
 }
+\references{
+Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance testing in
+supervised learning with multimodal data. arXiv preprint.
+\doi{10.48550/arXiv.2402.14416}
+}

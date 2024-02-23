@@ -4,6 +4,11 @@
 #' Formula-based interface for the generalised and projected covariance measure
 #' tests.
 #'
+#' @references
+#' Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance testing in
+#' supervised learning with multimodal data. arXiv preprint.
+#' \doi{10.48550/arXiv.2402.14416}
+#'
 #' @param formula Formula of the form \code{Y ~ X | Z} for testing Y independent
 #'     of X given Z.
 #' @param data Data.frame containing the variables in \code{formula}.
