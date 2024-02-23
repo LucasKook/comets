@@ -120,4 +120,4 @@ arXiv preprint.
 
 [3] Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance testing in
 supervised learning with multimodal data. arXiv preprint.
-[doi:<10.48550/arXiv.2402.14416>](https://doi.org/10.48550/arXiv.2402.14416)
+[doi:10.48550/arXiv.2402.14416](https://doi.org/10.48550/arXiv.2402.14416)
