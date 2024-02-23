@@ -16,5 +16,5 @@ License: GPL-3
 Encoding: UTF-8
 RoxygenNote: 7.2.3
 Suggests: 
-    testthat (>= 3.0.0), tram, ggplot2, tidyr, ggpubr, dplyr
+    testthat (>= 3.0.0), ggplot2, tidyr, dplyr
 Config/testthat/edition: 3

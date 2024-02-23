@@ -169,7 +169,7 @@ predict.lasso <- function(object, data = NULL, ...) {
 plot.pcm <- function(x, ...) {
   .data <- NULL
   test <- x$check.data
-  if (requireNamespace("ggplot2") && requireNamespace("tidyr") && requireNamespace("ggpubr")) {
+  if (requireNamespace("ggplot2") && requireNamespace("tidyr")) {
     mpl <- \(xx, yy, pdat, ...) {
       ggplot2::ggplot(pdat, ggplot2::aes(y = .data[[yy]], x = .data[[xx]])) +
         ggplot2::geom_point(alpha = 0.3) +
