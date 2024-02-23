@@ -47,17 +47,15 @@ for Y on Z, default is \code{"rf"} for random forest.}
 \value{
 Object of class '\code{pcm}' and '\code{htest}' with the following
 components:
-\itemize{
-\item{\code{statistic}} {The value of the test statistic.}
-\item{\code{p.value}} {The p-value for the \code{hypothesis}}
-\item{\code{parameter}} {In case X is multidimensional, this is the degrees of
+\item{\code{statistic}}{The value of the test statistic.}
+\item{\code{p.value}}{The p-value for the \code{hypothesis}}
+\item{\code{parameter}}{In case X is multidimensional, this is the degrees of
     freedom used for the chi-squared test.}
-\item{\code{hypothesis}} {Null hypothesis of conditional mean independence.}
-\item{\code{null.value}} {Null hypothesis of conditional mean independence.}
-\item{\code{method}} {The string \code{"Projected covariance measure test"}.}
-\item{\code{data.name}} {A character string giving the name(s) of the data.}
-\item{\code{check.data}} {A \code{data.frame} containing the residuals for plotting.}
-}
+\item{\code{hypothesis}}{Null hypothesis of conditional mean independence.}
+\item{\code{null.value}}{Null hypothesis of conditional mean independence.}
+\item{\code{method}}{The string \code{"Projected covariance measure test"}.}
+\item{\code{data.name}}{A character string giving the name(s) of the data.}
+\item{\code{check.data}}{A \code{data.frame} containing the residuals for plotting.}
 }
 \description{
 Projected covariance measure test for conditional mean independence

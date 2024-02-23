@@ -40,18 +40,16 @@ X on Z.}
 \value{
 Object of class '\code{gcm}' and '\code{htest}' with the following
 components:
-\itemize{
-\item{\code{statistic}} {The value of the test statistic.}
-\item{\code{p.value}} {The p-value for the \code{hypothesis}}
-\item{\code{parameter}} {In case X is multidimensional, this is the degrees of
+\item{\code{statistic}}{The value of the test statistic.}
+\item{\code{p.value}}{The p-value for the \code{hypothesis}}
+\item{\code{parameter}}{In case X is multidimensional, this is the degrees of
     freedom used for the chi-squared test.}
-\item{\code{hypothesis}} {String specifying the null hypothesis .}
-\item{\code{null.value}} {String specifying the null hypothesis.}
-\item{\code{method}} {The string \code{"Generalised covariance measure test"}.}
-\item{\code{data.name}} {A character string giving the name(s) of the data.}
-\item{\code{rY}} {Residuals for the Y on Z regression.}
-\item{\code{rX}} {Residuals for the X on Z regression.}
-}
+\item{\code{hypothesis}}{String specifying the null hypothesis .}
+\item{\code{null.value}}{String specifying the null hypothesis.}
+\item{\code{method}}{The string \code{"Generalised covariance measure test"}.}
+\item{\code{data.name}}{A character string giving the name(s) of the data.}
+\item{\code{rY}}{Residuals for the Y on Z regression.}
+\item{\code{rX}}{Residuals for the X on Z regression.}
 }
 \description{
 Generalised covariance measure test using random forests
