@@ -59,11 +59,11 @@ The generalised covariance measure test tests whether the conditional
 covariance of Y and X given Z is zero.
 }
 \examples{
-X <- matrix(rnorm(2e3), ncol = 2)
+X <- matrix(rnorm(3e2), ncol = 2)
 colnames(X) <- c("X1", "X2")
-Z <- matrix(rnorm(2e3), ncol = 2)
+Z <- matrix(rnorm(3e2), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
-Y <- rnorm(1e3) # X[, 2] + Z[, 2] + rnorm(1e3)
+Y <- rnorm(150) # X[, 2] + Z[, 2] + rnorm(150)
 (gcm1 <- gcm(Y, X, Z))
 
 }
