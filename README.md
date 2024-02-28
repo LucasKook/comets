@@ -101,6 +101,12 @@ The development version of `comets` can be installed using:
 remotes::install_github("LucasKook/comets")
 ```
 
+A stable version of `comets` can be installed from CRAN via:
+
+```r
+install.packages("comets")
+```
+
 # Replication materials
 
 All results in [3] can be reproduced by running `make all` in `./inst`
