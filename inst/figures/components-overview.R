@@ -25,7 +25,7 @@ ggsave("inst/figures/manhatten.pdf", height = 2, width = 3)
 
 # GCM v PCM ---------------------------------------------------------------
 
-f <- \(x) 1 + sin(3 * X^2)
+f <- \(x) 1 + sin(3 * x^2)
 g <- \(z) 1 + z^3
 mu <- \(x, z) f(x) * g(z)
 
