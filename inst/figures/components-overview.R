@@ -42,15 +42,19 @@ pd2$TX <- (f(X) - mean(f(X))) * g(Z)
 mTX <- .ranger(TX ~ Z, data = pd2)
 pd2$RTX <- residuals.ranger(mTX)
 
-ggplot(pd2 |> mutate(id = 1:n) |> pivot_longer(X:Z, names_to = "Predictor",
-                                               values_to = "value"),
-       aes(y = Y, x = value, color = Predictor, group = Predictor)) +
-  geom_point(alpha = 0.5) +
-  geom_smooth(method = "gam", se = FALSE) +
-  scale_color_brewer(palette = "Dark2") +
-  theme(legend.position = "bottom", legend.box.spacing = unit(-0.2, "cm")) +
-  labs(y = "Response Y", subtitle = "Y depends on X given Z",
-       x = element_blank())
+pd3 <- expand.grid(X = seq(-1, 1, length.out = 1e3),
+                   Z = c(-0.8, -0.6, 0, 0.6, 0.8, 0.9))
+
+pd3$Y <- mu(pd3$X, pd3$Z)
+
+ggplot(pd3, aes(x = X, y = Y, color = Z, group = Z)) +
+  geom_line() +
+  labs(x = "Predictor X", y = "Response Y", subtitle = "Y depends on X given Z",
+       color = "Z", linetype = "Z") +
+  geom_point(data = pd2, aes(color = Z), alpha = 0.7) +
+  scale_color_viridis_c(begin = 0.1, end = 0.9, breaks = c(-0.9, 0, 0.9)) +
+  theme(legend.position = c(0.5, 0.9), legend.background = element_rect(fill = "transparent"),
+        legend.direction = "horizontal", legend.key.size = unit(0.3, "cm"), legend.key.width = unit(0.5, "cm"))
 
 ggsave("inst/figures/pcmgcmdata.pdf", height = 3.3, width = 3.3)
 
