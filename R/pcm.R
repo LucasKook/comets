@@ -108,7 +108,7 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
 
   ### Test
   L <- (Yte - predict(mhat, data = Zte)) * (fhats - mhatfhat$predictions)
-  stat <- sqrt(length(idx)) * mean(L) / sqrt(mean(L^2) - mean(L)^2)
+  stat <- sqrt(NROW(Yte)) * mean(L) / sqrt(mean(L^2) - mean(L)^2)
   if (is.nan(stat)) stat <- -Inf
   pval <- pnorm(stat, lower.tail = FALSE)
 
