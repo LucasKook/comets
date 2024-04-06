@@ -39,11 +39,12 @@
 #' @export
 #'
 #' @examples
-#' X <- matrix(rnorm(3e2), ncol = 2)
+#' n <- 150
+#' X <- matrix(rnorm(2 * n), ncol = 2)
 #' colnames(X) <- c("X1", "X2")
-#' Z <- matrix(rnorm(3e2), ncol = 2)
+#' Z <- matrix(rnorm(2 * n), ncol = 2)
 #' colnames(Z) <- c("Z1", "Z2")
-#' Y <- rnorm(150) # X[, 2] + Z[, 2] + rnorm(150)
+#' Y <- X[, 2] + Z[, 2] + rnorm(n)
 #' (gcm1 <- gcm(Y, X, Z))
 #'
 gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
@@ -110,25 +111,24 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
   x
 }
 
-.gcm <- function (r, e) {
-  dR <- NCOL(r)
-  dE <- NCOL(e)
-  nn <- NROW(r)
-  if (dR > 1 || dE > 1) {
-    R_mat <- matrix(r, nrow = nn, ncol = dE) * e
-    sigma <- crossprod(R_mat)/nn - tcrossprod(colMeans(R_mat))
+.gcm <- function (rY, rX) {
+  dY <- NCOL(rY)
+  dX <- NCOL(rX)
+  nn <- NROW(rY)
+  RR <- rY * rX
+  if (dY > 1 || dX > 1) {
+    sigma <- crossprod(RR)/nn - tcrossprod(colMeans(RR))
     eig <- eigen(sigma)
     if (min(eig$values) < .Machine$double.eps)
       warning("`vcov` of test statistic is not invertible")
     siginvhalf <- eig$vectors %*% diag(eig$values^(-1/2)) %*%
       t(eig$vectors)
-    tstat <- siginvhalf %*% colSums(R_mat)/sqrt(nn)
-    stat <- structure(sum(tstat^2), df = dR * dE)
+    tstat <- siginvhalf %*% colSums(RR)/sqrt(nn)
+    stat <- structure(sum(tstat^2), df = dY * dX)
   }
   else {
-    R <- r * e
-    R.sq <- R^2
-    meanR <- mean(R)
+    R.sq <- RR^2
+    meanR <- mean(RR)
     stat <- sqrt(nn) * meanR/sqrt(mean(R.sq) - meanR^2)
   }
   stat

@@ -20,6 +20,7 @@ pcm(
   args_YhatonZ = list(mtry = identity),
   args_VonXZ = list(mtry = identity),
   args_RonZ = list(mtry = identity),
+  frac = 0.5,
   ...
 )
 }
@@ -63,6 +64,8 @@ for the estimated transformation of Y, X, and Z on Z, default is
 
 \item{args_RonZ}{Arguments passed to \code{reg_RonZ}}
 
+\item{frac}{Relative size of train split}
+
 \item{...}{Additional arguments currently ignored}
 }
 \value{
@@ -91,7 +94,7 @@ X <- matrix(rnorm(2 * n), ncol = 2)
 colnames(X) <- c("X1", "X2")
 Z <- matrix(rnorm(2 * n), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
-Y <- rnorm(n) # X[, 2] + Z[, 2] + rnorm(1e3)
+Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 (pcm1 <- pcm(Y, X, Z))
 
 }

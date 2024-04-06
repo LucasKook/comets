@@ -14,6 +14,7 @@ wgcm(
   reg_wfun = "rf",
   args_XonZ = NULL,
   args_wfun = NULL,
+  frac = 0.5,
   ...
 )
 }
@@ -42,6 +43,8 @@ estimating the weighting function.}
 
 \item{args_wfun}{Additional arguments passed to \code{reg_XonZ}.}
 
+\item{frac}{Relative size of train split}
+
 \item{...}{Additional arguments passed to \code{reg_YonZ}}
 }
 \value{
@@ -66,11 +69,12 @@ The weighted generalised covariance measure test tests whether a weighted
 version of the conditional covariance of Y and X given Z is zero.
 }
 \examples{
-X <- matrix(rnorm(3e2), ncol = 2)
+n <- 150
+X <- matrix(rnorm(2 * n), ncol = 2)
 colnames(X) <- c("X1", "X2")
-Z <- matrix(rnorm(3e2), ncol = 2)
+Z <- matrix(rnorm(2 * n), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
-Y <- X[, 2]^2 + Z[, 2] + rnorm(150)
+Y <- X[, 2] + Z[, 2] + rnorm(n)
 (wgcm1 <- wgcm(Y, X, Z))
 
 }

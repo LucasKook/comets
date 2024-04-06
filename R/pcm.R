@@ -30,6 +30,7 @@
 #' @param args_YhatonZ Arguments passed to \code{reg_YhatonZ}
 #' @param args_VonXZ Arguments passed to \code{reg_VonXZ}
 #' @param args_RonZ Arguments passed to \code{reg_RonZ}
+#' @param frac Relative size of train split
 #' @param ... Additional arguments currently ignored
 #'
 #' @importFrom ranger ranger
@@ -54,7 +55,7 @@
 #' colnames(X) <- c("X1", "X2")
 #' Z <- matrix(rnorm(2 * n), ncol = 2)
 #' colnames(Z) <- c("Z1", "Z2")
-#' Y <- rnorm(n) # X[, 2] + Z[, 2] + rnorm(1e3)
+#' Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 #' (pcm1 <- pcm(Y, X, Z))
 #'
 pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
@@ -62,7 +63,8 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
                 reg_RonZ = "rf", args_YonXZ = NULL, args_YonZ = NULL,
                 args_YhatonZ = list(mtry = identity),
                 args_VonXZ = list(mtry = identity),
-                args_RonZ = list(mtry = identity), ...) {
+                args_RonZ = list(mtry = identity),
+                frac = 0.5, ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
@@ -83,15 +85,14 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
     }))
   } else {
     ### Sample splitting
-    idx <- sample.int(NROW(Y), ceiling(NROW(Y) / 2))
-    ### Split 1
-    Ytr <- Y[idx]
-    Xtr <- data.frame(X)[idx, , drop = FALSE]
-    Ztr <- data.frame(Z)[idx, , drop = FALSE]
-    ### Split 2
-    Yte <- Y[-idx]
-    Xte <- data.frame(X)[-idx, , drop = FALSE]
-    Zte <- data.frame(Z)[-idx, , drop = FALSE]
+    dsp <- .split_sample(Y, X, Z, frac = frac)
+    Ytr <- dsp$Ytr
+    Xtr <- dsp$Xtr
+    Ztr <- dsp$Ztr
+    Yte <- dsp$Yte
+    Xte <- dsp$Xte
+    Zte <- dsp$Zte
+    idx <- dsp$idx
 
     ### Obtain hat{h}
     ghat <- do.call(reg_YonXZ, c(list(y = Ytr, x = cbind(Xtr, Ztr)), args_YonXZ))
@@ -137,6 +138,21 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
     method = paste0("Projected covariance measure test"),
     data.name = deparse(match.call(), width.cutoff = 80),
     check.data = dcheck, rep = rep), class = c("pcm", "htest"))
+}
+
+# Helpers -----------------------------------------------------------------
+
+.split_sample <- function(Y, X, Z, frac = 0.5) {
+  idx <- sample.int(NROW(Y), ceiling(frac * NROW(Y)))
+  ### Split 1
+  Ytr <- Y[idx]
+  Xtr <- data.frame(X)[idx, , drop = FALSE]
+  Ztr <- data.frame(Z)[idx, , drop = FALSE]
+  ### Split 2
+  Yte <- Y[-idx]
+  Xte <- data.frame(X)[-idx, , drop = FALSE]
+  Zte <- data.frame(Z)[-idx, , drop = FALSE]
+  list(Ytr = Ytr, Xtr = Xtr, Ztr = Ztr, Yte = Yte, Xte = Xte, Zte = Zte, idx = idx)
 }
 
 # Regressions -------------------------------------------------------------
@@ -194,3 +210,4 @@ plot.pcm <- function(x, ...) {
   }
   return(invisible(p2))
 }
+

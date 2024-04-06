@@ -24,6 +24,7 @@
 #'     estimating the weighting function.
 #' @param args_XonZ Additional arguments passed to \code{reg_XonZ}.
 #' @param args_wfun Additional arguments passed to \code{reg_XonZ}.
+#' @param frac Relative size of train split
 #' @param ... Additional arguments passed to \code{reg_YonZ}
 #'
 #' @returns Object of class '\code{wgcm}' and '\code{htest}' with the following
@@ -42,16 +43,17 @@
 #' @export
 #'
 #' @examples
-#' X <- matrix(rnorm(3e2), ncol = 2)
+#' n <- 150
+#' X <- matrix(rnorm(2 * n), ncol = 2)
 #' colnames(X) <- c("X1", "X2")
-#' Z <- matrix(rnorm(3e2), ncol = 2)
+#' Z <- matrix(rnorm(2 * n), ncol = 2)
 #' colnames(Z) <- c("Z1", "Z2")
-#' Y <- X[, 2]^2 + Z[, 2] + rnorm(150)
+#' Y <- X[, 2] + Z[, 2] + rnorm(n)
 #' (wgcm1 <- wgcm(Y, X, Z))
 #'
 wgcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
                 reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
-                args_XonZ = NULL, args_wfun = NULL, ...) {
+                args_XonZ = NULL, args_wfun = NULL, frac = 0.5, ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
@@ -59,15 +61,13 @@ wgcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
   args <- if (length(list(...)) > 0) list(...) else NULL
 
   ### Sample splitting
-  idx <- sample.int(NROW(Y), ceiling(NROW(Y) / 2))
-  ### Split 1
-  Ytr <- Y[idx]
-  Xtr <- data.frame(X)[idx, , drop = FALSE]
-  Ztr <- data.frame(Z)[idx, , drop = FALSE]
-  ### Split 2
-  Yte <- Y[-idx]
-  Xte <- data.frame(X)[-idx, , drop = FALSE]
-  Zte <- data.frame(Z)[-idx, , drop = FALSE]
+  dsp <- .split_sample(Y, X, Z, frac = frac)
+  Ytr <- dsp$Ytr
+  Xtr <- dsp$Xtr
+  Ztr <- dsp$Ztr
+  Yte <- dsp$Yte
+  Xte <- dsp$Xte
+  Zte <- dsp$Zte
 
   ### Estimate weight function
   wYZ <- do.call(reg_YonZ, c(list(y = Ytr, x = Ztr), args))
@@ -113,6 +113,8 @@ wgcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
     rY = rY, rX = rX * W), class = c("wgcm", "htest"))
 
 }
+
+# Vis ---------------------------------------------------------------------
 
 #' @exportS3Method plot wgcm
 plot.wgcm <- function(x, ...) {
