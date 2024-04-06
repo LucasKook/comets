@@ -2,11 +2,13 @@
 
 S3method(plot,gcm)
 S3method(plot,pcm)
+S3method(plot,wgcm)
 S3method(predict,lasso)
 S3method(predict,rf)
 export(comet)
 export(gcm)
 export(pcm)
+export(wgcm)
 importFrom(glmnet,cv.glmnet)
 importFrom(ranger,ranger)
 importFrom(stats,model.frame)

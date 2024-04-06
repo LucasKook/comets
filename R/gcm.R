@@ -1,4 +1,4 @@
-#' Generalised covariance measure test using random forests
+#' Generalised covariance measure test
 #'
 #' @details
 #' The generalised covariance measure test tests whether the conditional
