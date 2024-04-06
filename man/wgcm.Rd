@@ -70,9 +70,8 @@ X <- matrix(rnorm(3e2), ncol = 2)
 colnames(X) <- c("X1", "X2")
 Z <- matrix(rnorm(3e2), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
-Y <- X[, 2]^3 + Z[, 2] + rnorm(150)
+Y <- X[, 2]^2 + Z[, 2] + rnorm(150)
 (wgcm1 <- wgcm(Y, X, Z))
-plot(wgcm1)
 
 }
 \references{
