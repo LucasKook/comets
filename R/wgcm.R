@@ -9,20 +9,10 @@
 #' generalised covariance measure. Journal of Machine Learning Research,
 #' 23(273), 1-68.
 #'
-#' @param Y Vector of response values. Can be supplied as a numeric vector or
-#'     a single column matrix.
-#' @param X Matrix or data.frame of covariates.
-#' @param Z Matrix or data.frame of covariates.
-#' @param alternative A character string specifying the alternative hypothesis,
-#'     must be one of \code{"two.sided"} (default), \code{"greater"} or
-#'     \code{"less"}
-#' @param reg_YonZ Character string or function specifying the regression for
-#'     Y on Z.
-#' @param reg_XonZ Character string or function specifying the regression for
-#'     X on Z.
+#' @inherit gcm
+#'
 #' @param reg_wfun Character string or function specifying the regression for
 #'     estimating the weighting function.
-#' @param args_XonZ Additional arguments passed to \code{reg_XonZ}.
 #' @param args_wfun Additional arguments passed to \code{reg_XonZ}.
 #' @param frac Relative size of train split
 #' @param ... Additional arguments passed to \code{reg_YonZ}
@@ -48,16 +38,16 @@
 #' colnames(X) <- c("X1", "X2")
 #' Z <- matrix(rnorm(2 * n), ncol = 2)
 #' colnames(Z) <- c("Z1", "Z2")
-#' Y <- X[, 2] + Z[, 2] + rnorm(n)
+#' Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 #' (wgcm1 <- wgcm(Y, X, Z))
 #'
-wgcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
-                reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
-                args_XonZ = NULL, args_wfun = NULL, frac = 0.5, ...) {
+wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
+                 args_XonZ = NULL, args_wfun = NULL, frac = 0.5,
+                 B = 499L, ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
-  alternative <- match.arg(alternative)
+  alternative <- "greater"
   args <- if (length(list(...)) > 0) list(...) else NULL
 
   ### Sample splitting
@@ -69,39 +59,33 @@ wgcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
   Xte <- dsp$Xte
   Zte <- dsp$Zte
 
-  ### Estimate weight function
+  ### Estimate weight function and compute weights
   wYZ <- do.call(reg_YonZ, c(list(y = Ytr, x = Ztr), args))
-  wXZ <- apply(as.data.frame(Xtr), 2, \(tX) {
-    do.call(reg_XonZ, c(list(y = tX, x = Ztr), args_XonZ))
+  wrY <- stats::residuals(wYZ, response = Ytr, data = Ztr)
+  wrX <- apply(as.data.frame(Xtr), 2, \(tX) {
+    mX <- do.call(reg_XonZ, c(list(y = tX, x = Ztr), args_XonZ))
+    stats::residuals(mX, response = tX, data = Ztr)
   })
-  wrY <- .compute_residuals(Ytr, predict(wYZ, data = Ztr))
-  wpreds <- lapply(wXZ, predict, data = Ztr)
-  wrX <- Xtr - do.call("cbind", wpreds)
-
-  RP <- matrix(wrY, nrow = NROW(Ytr), ncol = NCOL(wrX)) * wrX
-  wZ <- apply(as.data.frame(RP), 2, \(tRP) {
-    do.call(reg_wfun, c(list(y = tRP, x = Ztr), args_wfun))
+  RP <- c(wrY) * wrX
+  W <- apply(as.data.frame(RP), 2, \(tRP) {
+    mZ <- do.call(reg_wfun, c(list(y = tRP, x = Ztr), args_wfun))
+    sign(predict(mZ, data = Zte))
   })
-  wfun <- \(Z) sign(do.call("cbind", lapply(wZ, predict, data = Z)))
 
+  ### GCM on test data with weights
   YZ <- do.call(reg_YonZ, c(list(y = Yte, x = Zte), args))
-  XZ <- apply(as.data.frame(Xte), 2, \(tX) {
-    do.call(reg_XonZ, c(list(y = tX, x = Zte), args_XonZ))
+  rY <- stats::residuals(YZ, response = Yte, data = Zte)
+  rX <- apply(as.data.frame(Xte), 2, \(tX) {
+    mX <- do.call(reg_XonZ, c(list(y = tX, x = Zte), args_XonZ))
+    stats::residuals(mX, response = tX, data = Zte)
   })
-  rY <- .compute_residuals(Yte, predict(YZ, data = Zte))
-  preds <- lapply(XZ, predict, data = Zte)
-  rX <- Xte - do.call("cbind", preds)
-  W <- wfun(Zte)
-  stat <- .gcm(rY, as.matrix(rX * W))
-  pval <- .compute_normal_pval(stat, alternative)
+  tst <- .gcm(rY, as.matrix(rX * W), alternative = "greater", type = "max", B = B)
+  df <- tst$df
+  stat <- tst$stat
+  pval <- tst$pval
 
-  if (!is.null(df <- attr(pval, "df"))) {
-    tname <- "X-squared"
-    par <- c("df" = df)
-  } else {
-    tname <- "Z"
-    par <- NULL
-  }
+  tname <- ifelse(df == 1, "Z", "|Z|")
+  par <- NULL
   names(stat) <- tname
 
   structure(list(

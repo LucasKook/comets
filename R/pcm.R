@@ -99,12 +99,13 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
     pghat <- predict(ghat, data = cbind(Xtr, Ztr))
     mtilde <- do.call(reg_YhatonZ, c(list(x = Ztr, y = pghat), args_YhatonZ))
     htilde <- \(X, Z) predict(ghat, data = cbind(X, Z)) - predict(mtilde, data = Z)
-    rho <- mean((Ytr - predict(mtilde, data = Ztr)) * predict(ghat, data = cbind(Xtr, Ztr)))
+    rho <- mean(stats::residuals(mtilde, response = Ytr, data = Ztr) *
+                  predict(ghat, data = cbind(Xtr, Ztr)))
     hhat <- \(X, Z) sign(rho) * htilde(X, Z)
 
     ### Obtain hat{v}
     if (est_vhat) {
-      sqr <- (Ytr - predict(ghat, data = cbind(Xtr, Ztr)))^2
+      sqr <- stats::residuals(ghat, response = Ytr, data = cbind(Xtr, Ztr))^2
       vtilde <- do.call(reg_VonXZ, c(list(x = cbind(Xtr, Ztr), y = sqr), args_VonXZ))
       a <- function(c) mean(sqr / (pmax(predict(vtilde, data = cbind(Xtr, Ztr)), 0) + c))
       chat <- if (a(0) < 1) 0 else stats::uniroot(\(c) a(c) - 1, c(0, 10), extendInt = "yes")$root
@@ -120,7 +121,7 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
     mhat <- do.call(reg_YonZ, c(list(y = Yte, x = Zte), args_YonZ))
 
     ### Test
-    rY <- Yte - predict(mhat, data = Zte)
+    rY <- stats::residuals(mhat, response = Yte, data = Zte)
     rT <- fhats - predict(mhatfhat, data = Zte)
     L <- rY * rT
     stat <- sqrt(NROW(Yte)) * mean(L) / sqrt(mean(L^2) - mean(L)^2)
@@ -177,6 +178,12 @@ predict.rf <- function(object, data = NULL, ...) {
   preds
 }
 
+#' @exportS3Method residuals rf
+residuals.rf <- function(object, response = NULL, data = NULL, ...) {
+  preds <- predict.rf(object, data, ...)
+  .compute_residuals(response, preds)
+}
+
 #' @importFrom glmnet cv.glmnet
 lasso <- function(y, x, ...) {
   obj <- cv.glmnet(y = y, x = as.matrix(x), ...)
@@ -188,6 +195,12 @@ lasso <- function(y, x, ...) {
 predict.lasso <- function(object, data = NULL, ...) {
   class(object) <- class(object)[-1]
   predict(object, newx = as.matrix(data), s = object$lambda.min)[, 1]
+}
+
+#' @exportS3Method residuals lasso
+residuals.lasso <- function(object, response = NULL, data = NULL, ...) {
+  preds <- predict.lasso(object, data)
+  .compute_residuals(response, preds)
 }
 
 # Diagnostics -------------------------------------------------------------

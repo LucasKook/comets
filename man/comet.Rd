@@ -4,7 +4,7 @@
 \alias{comet}
 \title{Covariance measure tests with formula interface}
 \usage{
-comet(formula, data, test = c("gcm", "pcm"), ...)
+comet(formula, data, test = c("gcm", "pcm", "wgcm"), ...)
 }
 \arguments{
 \item{formula}{Formula of the form \code{Y ~ X | Z} for testing Y independent

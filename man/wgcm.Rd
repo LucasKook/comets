@@ -8,13 +8,13 @@ wgcm(
   Y,
   X,
   Z,
-  alternative = c("two.sided", "less", "greater"),
   reg_YonZ = "rf",
   reg_XonZ = "rf",
   reg_wfun = "rf",
   args_XonZ = NULL,
   args_wfun = NULL,
   frac = 0.5,
+  B = 499L,
   ...
 )
 }
@@ -25,10 +25,6 @@ a single column matrix.}
 \item{X}{Matrix or data.frame of covariates.}
 
 \item{Z}{Matrix or data.frame of covariates.}
-
-\item{alternative}{A character string specifying the alternative hypothesis,
-must be one of \code{"two.sided"} (default), \code{"greater"} or
-\code{"less"}}
 
 \item{reg_YonZ}{Character string or function specifying the regression for
 Y on Z.}
@@ -44,6 +40,9 @@ estimating the weighting function.}
 \item{args_wfun}{Additional arguments passed to \code{reg_XonZ}.}
 
 \item{frac}{Relative size of train split}
+
+\item{B}{Number of bootstrap samples. Only applies if \code{type = "max"} is
+used.}
 
 \item{...}{Additional arguments passed to \code{reg_YonZ}}
 }
@@ -74,7 +73,7 @@ X <- matrix(rnorm(2 * n), ncol = 2)
 colnames(X) <- c("X1", "X2")
 Z <- matrix(rnorm(2 * n), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
-Y <- X[, 2] + Z[, 2] + rnorm(n)
+Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 (wgcm1 <- wgcm(Y, X, Z))
 
 }

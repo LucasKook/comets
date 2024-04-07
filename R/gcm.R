@@ -15,13 +15,20 @@
 #' @param Z Matrix or data.frame of covariates.
 #' @param alternative A character string specifying the alternative hypothesis,
 #'     must be one of \code{"two.sided"} (default), \code{"greater"} or
-#'     \code{"less"}
+#'     \code{"less"}. Only applies if \code{type = "quadratic"} and \code{X}
+#'     is one-dimensional.
 #' @param reg_YonZ Character string or function specifying the regression for
 #'     Y on Z.
 #' @param reg_XonZ Character string or function specifying the regression for
 #'     X on Z.
 #' @param args_XonZ Additional arguments passed to \code{reg_XonZ}.
-#' @param ... Additional arguments passed to \code{reg_YonZ}
+#' @param type Type of test statistic, either \code{"quadratic"} (default) or
+#'     \code{"max"}. If \code{"max"} is specified, the p-value is computed
+#'     based on a bootstrap approximation of the null distribution with
+#'     \code{B} samples.
+#' @param B Number of bootstrap samples. Only applies if \code{type = "max"} is
+#'     used.
+#' @param ... Additional arguments passed to \code{reg_YonZ}.
 #'
 #' @returns Object of class '\code{gcm}' and '\code{htest}' with the following
 #' components:
@@ -44,32 +51,36 @@
 #' colnames(X) <- c("X1", "X2")
 #' Z <- matrix(rnorm(2 * n), ncol = 2)
 #' colnames(Z) <- c("Z1", "Z2")
-#' Y <- X[, 2] + Z[, 2] + rnorm(n)
+#' Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 #' (gcm1 <- gcm(Y, X, Z))
 #'
 gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
-                reg_YonZ = "rf", reg_XonZ = "rf", args_XonZ = NULL, ...) {
+                reg_YonZ = "rf", reg_XonZ = "rf", args_XonZ = NULL,
+                type = c("quadratic", "max"), B = 499L, ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
   alternative <- match.arg(alternative)
+  type <- match.arg(type)
   args <- if (length(list(...)) > 0) list(...) else NULL
   YZ <- do.call(reg_YonZ, c(list(y = Y, x = Z), args))
-  XZ <- apply(as.data.frame(X), 2, \(tX) {
-    do.call(reg_XonZ, c(list(y = tX, x = Z), args_XonZ))
+  rY <- stats::residuals(YZ, response = Y, data = Z)
+  rX <- apply(as.data.frame(X), 2, \(tX) {
+    mX <- do.call(reg_XonZ, c(list(y = tX, x = Z), args_XonZ))
+    stats::residuals(mX, response = tX, data = Z)
   })
-  rY <- .compute_residuals(Y, predict(YZ, data = Z))
-  preds <- lapply(XZ, predict, data = Z)
-  rX <- X - do.call("cbind", preds)
-  stat <- .gcm(rY, rX)
-  pval <- .compute_normal_pval(stat, alternative)
+  tst <- .gcm(rY, rX, alternative = alternative, type = type, B = B)
+  df <- tst$df
+  stat <- tst$stat
+  pval <- tst$pval
 
-  if (!is.null(df <- attr(pval, "df"))) {
+  tname <- "Z"
+  par <- NULL
+  if (type == "quadratic" && tst$df > 1) {
     tname <- "X-squared"
     par <- c("df" = df)
-  } else {
-    tname <- "Z"
-    par <- NULL
+  } else if (type == "max") {
+    tname <- "|Z|"
   }
   names(stat) <- tname
 
@@ -111,39 +122,47 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
   x
 }
 
-.gcm <- function (rY, rX) {
+#' @importFrom stats pnorm
+.gcm <- function(
+    rY, rX, alternative = "two.sided", type = c("quadratic", "max"), B = 499L
+) {
   dY <- NCOL(rY)
   dX <- NCOL(rX)
   nn <- NROW(rY)
   RR <- rY * rX
   if (dY > 1 || dX > 1) {
-    sigma <- crossprod(RR)/nn - tcrossprod(colMeans(RR))
-    eig <- eigen(sigma)
-    if (min(eig$values) < .Machine$double.eps)
-      warning("`vcov` of test statistic is not invertible")
-    siginvhalf <- eig$vectors %*% diag(eig$values^(-1/2)) %*%
-      t(eig$vectors)
-    tstat <- siginvhalf %*% colSums(RR)/sqrt(nn)
-    stat <- structure(sum(tstat^2), df = dY * dX)
+    if (type == "quadratic") {
+      sigma <- crossprod(RR)/nn - tcrossprod(colMeans(RR))
+      eig <- eigen(sigma)
+      if (min(eig$values) < .Machine$double.eps)
+        warning("`vcov` of test statistic is not invertible")
+      siginvhalf <- eig$vectors %*% diag(eig$values^(-1/2)) %*%
+        t(eig$vectors)
+      tstat <- siginvhalf %*% colSums(RR) / sqrt(nn)
+      stat <- sum(tstat^2)
+      pval <- stats::pchisq(stat, df = dX, lower.tail = FALSE)
+    } else {
+      tRR <- t(RR)
+      mRR <- rowMeans(tRR)
+      tRR <- tRR/sqrt((rowMeans(tRR^2) - mRR^2))
+      stat <- max(abs(mRR)) * sqrt(nn)
+      sim <- apply(abs(tRR %*% matrix(
+        stats::rnorm(nn * B), nn, B)), 2, max) / sqrt(nn)
+      pval <- (sum(sim >= stat) + 1)/(B + 1)
+    }
   }
   else {
     R.sq <- RR^2
     meanR <- mean(RR)
     stat <- sqrt(nn) * meanR/sqrt(mean(R.sq) - meanR^2)
+    pval <- switch(
+      alternative,
+      "two.sided" = 2 * stats::pnorm(-abs(stat)),
+      "greater" = 1 - stats::pnorm(stat),
+      "less" = stats::pnorm(stat)
+    )
   }
-  stat
-}
-
-#' @importFrom stats pnorm
-.compute_normal_pval <- function(stat, alternative) {
-  if (!is.null(df <- attr(stat, "df")))
-    return(stats::pchisq(stat, df = df, lower.tail = FALSE))
-  switch(
-    alternative,
-    "two.sided" = 2 * stats::pnorm(-abs(stat)),
-    "greater" = stats::pnorm(-abs(stat)),
-    "less" = stats::pnorm(abs(stat))
-  )
+  list("stat" = stat, "pval" = pval, df = dX)
 }
 
 .rm_int <- function(x) {

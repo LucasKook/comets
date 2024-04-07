@@ -24,7 +24,7 @@
 #' tn <- 3e2
 #' df <- data.frame(y = rnorm(tn), x1 = rnorm(tn), x2 = rnorm(tn), z = rnorm(tn))
 #' comet(y ~ x1 + x2 | z, data = df, test = "gcm")
-comet <- function(formula, data, test = c("gcm", "pcm"), ...) {
+comet <- function(formula, data, test = c("gcm", "pcm", "wgcm"), ...) {
   fm <- Formula::as.Formula(formula)
   Y <- stats::model.response(model.frame(fm, data))
   X <- .rm_int(stats::model.matrix(fm, data, rhs = 1))

@@ -12,6 +12,8 @@ gcm(
   reg_YonZ = "rf",
   reg_XonZ = "rf",
   args_XonZ = NULL,
+  type = c("quadratic", "max"),
+  B = 499L,
   ...
 )
 }
@@ -25,7 +27,8 @@ a single column matrix.}
 
 \item{alternative}{A character string specifying the alternative hypothesis,
 must be one of \code{"two.sided"} (default), \code{"greater"} or
-\code{"less"}}
+\code{"less"}. Only applies if \code{type = "quadratic"} and \code{X}
+is one-dimensional.}
 
 \item{reg_YonZ}{Character string or function specifying the regression for
 Y on Z.}
@@ -35,7 +38,15 @@ X on Z.}
 
 \item{args_XonZ}{Additional arguments passed to \code{reg_XonZ}.}
 
-\item{...}{Additional arguments passed to \code{reg_YonZ}}
+\item{type}{Type of test statistic, either \code{"quadratic"} (default) or
+\code{"max"}. If \code{"max"} is specified, the p-value is computed
+based on a bootstrap approximation of the null distribution with
+\code{B} samples.}
+
+\item{B}{Number of bootstrap samples. Only applies if \code{type = "max"} is
+used.}
+
+\item{...}{Additional arguments passed to \code{reg_YonZ}.}
 }
 \value{
 Object of class '\code{gcm}' and '\code{htest}' with the following
@@ -64,7 +75,7 @@ X <- matrix(rnorm(2 * n), ncol = 2)
 colnames(X) <- c("X1", "X2")
 Z <- matrix(rnorm(2 * n), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
-Y <- X[, 2] + Z[, 2] + rnorm(n)
+Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 (gcm1 <- gcm(Y, X, Z))
 
 }
