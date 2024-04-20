@@ -147,60 +147,13 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
   idx <- sample.int(NROW(Y), ceiling(frac * NROW(Y)))
   ### Split 1
   Ytr <- Y[idx]
-  Xtr <- data.frame(X)[idx, , drop = FALSE]
-  Ztr <- data.frame(Z)[idx, , drop = FALSE]
+  Xtr <- as.matrix(data.frame(X)[idx, , drop = FALSE])
+  Ztr <- as.matrix(data.frame(Z)[idx, , drop = FALSE])
   ### Split 2
   Yte <- Y[-idx]
-  Xte <- data.frame(X)[-idx, , drop = FALSE]
-  Zte <- data.frame(Z)[-idx, , drop = FALSE]
+  Xte <- as.matrix(data.frame(X)[-idx, , drop = FALSE])
+  Zte <- as.matrix(data.frame(Z)[-idx, , drop = FALSE])
   list(Ytr = Ytr, Xtr = Xtr, Ztr = Ztr, Yte = Yte, Xte = Xte, Zte = Zte, idx = idx)
-}
-
-# Regressions -------------------------------------------------------------
-
-rf <- function(y, x, ...) {
-  args <- list(...)
-  if (length(unique(y)) == 2) {
-    y <- as.factor(y)
-    args$probability <- TRUE
-  }
-  rf <- do.call("ranger", c(list(y = y, x = x), args))
-  class(rf) <- c("rf", class(rf))
-  rf
-}
-
-#' @exportS3Method predict rf
-predict.rf <- function(object, data = NULL, ...) {
-  class(object) <- class(object)[-1]
-  preds <- predict(object, data = data)$predictions
-  if (object$treetype == "Probability estimation")
-    preds <- preds[, 2]
-  preds
-}
-
-#' @exportS3Method residuals rf
-residuals.rf <- function(object, response = NULL, data = NULL, ...) {
-  preds <- predict.rf(object, data, ...)
-  .compute_residuals(response, preds)
-}
-
-#' @importFrom glmnet cv.glmnet
-lasso <- function(y, x, ...) {
-  obj <- cv.glmnet(y = y, x = as.matrix(x), ...)
-  class(obj) <- c("lasso", class(obj))
-  obj
-}
-
-#' @exportS3Method predict lasso
-predict.lasso <- function(object, data = NULL, ...) {
-  class(object) <- class(object)[-1]
-  predict(object, newx = as.matrix(data), s = object$lambda.min)[, 1]
-}
-
-#' @exportS3Method residuals lasso
-residuals.lasso <- function(object, response = NULL, data = NULL, ...) {
-  preds <- predict.lasso(object, data)
-  .compute_residuals(response, preds)
 }
 
 # Diagnostics -------------------------------------------------------------
@@ -223,4 +176,3 @@ plot.pcm <- function(x, ...) {
   }
   return(invisible(p2))
 }
-

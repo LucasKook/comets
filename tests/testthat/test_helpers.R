@@ -38,6 +38,23 @@ test_that("check data works", {
   expect_equal(NCOL(.check_data(cbind(tmp, tmp), "Z")), 2)
 })
 
+test_that("wGCM with different regressions", {
+  expect_no_error({
+    set.seed(12)
+    tn <- 3e2
+    set.seed(12)
+    X <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(X) <- c("X1", "X2")
+    Z <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(Z) <- c("Z1", "Z2")
+    Y <- rnorm(tn)
+    wgcm1 <- wgcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "lasso")
+    wgcm2 <- wgcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "rf")
+    wgcm3 <- wgcm(Y, X, Z, reg_XonZ = "ridge", reg_YonZ = "ridge")
+    wgcm4 <- wgcm(Y, X, Z, reg_XonZ = "qrf", reg_YonZ = "qrf")
+  })
+})
+
 test_that("GCM with different regressions", {
   expect_no_error({
     set.seed(12)
@@ -50,6 +67,8 @@ test_that("GCM with different regressions", {
     Y <- rnorm(tn)
     gcm1 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "lasso")
     gcm2 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "rf")
+    gcm3 <- gcm(Y, X, Z, reg_XonZ = "ridge", reg_YonZ = "ridge")
+    gcm4 <- gcm(Y, X, Z, reg_XonZ = "qrf", reg_YonZ = "qrf")
   })
 })
 
@@ -65,5 +84,17 @@ test_that("PCM with different regressions", {
     Y <- rnorm(tn)
     pcm1 <- pcm(Y, X, Z, reg_YonXZ = "lasso", reg_YonZ = "lasso")
     pcm2 <- pcm(Y, X, Z, reg_YonXZ = "rf", reg_YonZ = "lasso")
+    pcm3 <- pcm(Y, X, Z, reg_YonXZ = "ridge", reg_YonZ = "ridge")
   })
+})
+
+test_that("TRAM GCM works with coxph and survforest", {
+  library("survival")
+  data("GBSG2", package = "TH.data")
+  y <- Surv(GBSG2$time, GBSG2$cens)
+  x <- model.matrix(~ 0 + horTh, data = GBSG2)[, 2]
+  m <- cox(y, x)
+  z <- model.matrix(~ 0 + age, data = GBSG2)
+  expect_no_error(tgcm <- gcm(y, x, z, reg_YonZ = "cox"))
+  expect_no_error(tgcm <- gcm(y, x, z, reg_YonZ = "survforest"))
 })
