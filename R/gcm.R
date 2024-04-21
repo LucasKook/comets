@@ -124,7 +124,7 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
 
 #' @importFrom stats pnorm
 .gcm <- function(
-    rY, rX, alternative = "two.sided", type = c("quadratic", "max"), B = 499L
+    rY, rX, alternative = "two.sided", type = "quadratic", B = 499L
 ) {
   dY <- NCOL(rY)
   dX <- NCOL(rX)
