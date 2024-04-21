@@ -76,7 +76,7 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
 
   tname <- "Z"
   par <- NULL
-  if (type == "quadratic" && tst$df > 1) {
+  if (type == "quadratic" && df > 1) {
     tname <- "X-squared"
     par <- c("df" = df)
   } else if (type == "max") {
