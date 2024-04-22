@@ -14,12 +14,13 @@ gcm(
   args_XonZ = NULL,
   type = c("quadratic", "max"),
   B = 499L,
+  coin = FALSE,
+  cointrol = list(distribution = "asymptotic", teststat = "quadratic"),
   ...
 )
 }
 \arguments{
-\item{Y}{Vector of response values. Can be supplied as a numeric vector or
-a single column matrix.}
+\item{Y}{Vector or matrix of response values.}
 
 \item{X}{Matrix or data.frame of covariates.}
 
@@ -45,6 +46,14 @@ based on a bootstrap approximation of the null distribution with
 
 \item{B}{Number of bootstrap samples. Only applies if \code{type = "max"} is
 used.}
+
+\item{coin}{Logical; whether or not to use the \code{coin} package for
+computing the test statistic and p-value. The \code{coin} package
+computes variances with n - 1 degrees of freedom.
+The default is \code{FALSE}.}
+
+\item{cointrol}{List; further arguments passed to
+\code{\link[coin]{independence_test}}.}
 
 \item{...}{Additional arguments passed to \code{reg_YonZ}.}
 }

@@ -21,6 +21,8 @@ pcm(
   args_VonXZ = list(mtry = identity),
   args_RonZ = list(mtry = identity),
   frac = 0.5,
+  coin = FALSE,
+  cointrol = NULL,
   ...
 )
 }
@@ -65,6 +67,14 @@ for the estimated transformation of Y, X, and Z on Z, default is
 \item{args_RonZ}{Arguments passed to \code{reg_RonZ}}
 
 \item{frac}{Relative size of train split}
+
+\item{coin}{Logical; whether or not to use the \code{coin} package for
+computing the test statistic and p-value. The \code{coin} package
+computes variances with n - 1 degrees of freedom.
+The default is \code{FALSE}.}
+
+\item{cointrol}{List; further arguments passed to
+\code{\link[coin]{independence_test}}.}
 
 \item{...}{Additional arguments currently ignored}
 }

@@ -15,6 +15,8 @@ wgcm(
   args_wfun = NULL,
   frac = 0.5,
   B = 499L,
+  coin = FALSE,
+  cointrol = NULL,
   ...
 )
 }
@@ -43,6 +45,14 @@ estimating the weighting function.}
 
 \item{B}{Number of bootstrap samples. Only applies if \code{type = "max"} is
 used.}
+
+\item{coin}{Logical; whether or not to use the \code{coin} package for
+computing the test statistic and p-value. The \code{coin} package
+computes variances with n - 1 degrees of freedom.
+The default is \code{FALSE}.}
+
+\item{cointrol}{List; further arguments passed to
+\code{\link[coin]{independence_test}}.}
 
 \item{...}{Additional arguments passed to \code{reg_YonZ}}
 }

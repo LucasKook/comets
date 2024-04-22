@@ -11,6 +11,8 @@
 #'
 #' @inherit gcm
 #'
+#' @param Y Vector of response values. Can be supplied as a numeric vector or
+#'     a single column matrix.
 #' @param reg_wfun Character string or function specifying the regression for
 #'     estimating the weighting function.
 #' @param args_wfun Additional arguments passed to \code{reg_XonZ}.
@@ -43,7 +45,7 @@
 #'
 wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
                  args_XonZ = NULL, args_wfun = NULL, frac = 0.5,
-                 B = 499L, ...) {
+                 B = 499L, coin = FALSE, cointrol = NULL, ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
@@ -79,10 +81,19 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
     mX <- do.call(reg_XonZ, c(list(y = tX, x = Zte), args_XonZ))
     stats::residuals(mX, response = tX, data = Zte)
   })
-  tst <- .gcm(rY, as.matrix(rX * W), alternative = "greater", type = "max", B = B)
-  df <- tst$df
-  stat <- tst$stat
-  pval <- tst$pval
+  if (coin) {
+    tst <- do.call("independence_test", c(list(
+      rY ~ rX, alternative = "greater", teststat = "max",
+      distribution = coin::approximate(B))))
+    df <- NCOL(rY) * NCOL(rX)
+    stat <- coin::statistic(tst)
+    pval <- coin::pvalue(tst)
+  } else {
+    tst <- .gcm(rY, as.matrix(rX * W), alternative = "greater", type = "max", B = B)
+    df <- tst$df
+    stat <- tst$stat
+    pval <- tst$pval
+  }
 
   tname <- ifelse(df == 1, "Z", "|Z|")
   par <- NULL

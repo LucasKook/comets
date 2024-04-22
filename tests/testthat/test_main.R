@@ -19,6 +19,7 @@ test_that("comet", {
   data("mtcars")
   expect_no_error({
     comet(mpg ~ cyl | disp, data = mtcars)
+    comet(cbind(mpg, cyl) ~ vs + mpg | disp, data = mtcars)
     comet(factor(vs) ~ cyl | disp, data = mtcars)
     comet(mpg ~ cyl | disp, data = mtcars, test = "pcm")
     comet(factor(vs) ~ cyl | disp, data = mtcars, test = "pcm")

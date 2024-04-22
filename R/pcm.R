@@ -10,6 +10,8 @@
 #' testing. arXiv preprint. \doi{10.48550/arXiv.2211.02039}
 #'
 #' @inheritParams gcm
+#' @param Y Vector of response values. Can be supplied as a numeric vector or
+#'     a single column matrix.
 #' @param rep Number of repetitions with which to repeat the PCM test
 #' @param est_vhat Logical; whether to estimate the variance functional
 #' @param reg_YonXZ Character string or function specifying the regression
@@ -34,6 +36,7 @@
 #' @param ... Additional arguments currently ignored
 #'
 #' @importFrom ranger ranger
+#' @importFrom coin independence_test
 #'
 #' @returns Object of class '\code{pcm}' and '\code{htest}' with the following
 #' components:
@@ -64,7 +67,7 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
                 args_YhatonZ = list(mtry = identity),
                 args_VonXZ = list(mtry = identity),
                 args_RonZ = list(mtry = identity),
-                frac = 0.5, ...) {
+                frac = 0.5, coin = FALSE, cointrol = NULL, ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
@@ -123,10 +126,19 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
     ### Test
     rY <- stats::residuals(mhat, response = Yte, data = Zte)
     rT <- fhats - predict(mhatfhat, data = Zte)
-    L <- rY * rT
-    stat <- sqrt(NROW(Yte)) * mean(L) / sqrt(mean(L^2) - mean(L)^2)
-    if (is.nan(stat)) stat <- -Inf
-    pval <- pnorm(stat, lower.tail = FALSE)
+
+    if (coin) {
+      tst <- do.call("independence_test", c(list(
+        rY ~ rT, alternative = "greater", teststat = "scalar"), cointrol))
+      stat <- coin::statistic(tst)
+      pval <- coin::pvalue(tst)
+    } else {
+      L <- rY * rT
+      stat <- sqrt(NROW(Yte)) * mean(L) / sqrt(mean(L^2) - mean(L)^2)
+      if (is.nan(stat)) stat <- -Inf
+      pval <- pnorm(stat, lower.tail = FALSE)
+    }
+
 
     dcheck <- data.frame(id = setdiff(seq_len(NROW(Y)), idx),
                          rY = rY, rT = rT, iter = 1)

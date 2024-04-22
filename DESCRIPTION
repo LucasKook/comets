@@ -11,7 +11,7 @@ Description: Covariance measure tests for conditional independence testing
     measure test (Lundborg et al., 2023, <doi:10.48550/arXiv.2211.02039>). 
     Applications can be found in 
     Kook and Lundborg (2024, <doi:10.48550/arXiv.2402.14416>).
-Imports: ranger, glmnet, Formula, survival
+Imports: ranger, glmnet, Formula, survival, coin
 License: GPL-3
 Encoding: UTF-8
 RoxygenNote: 7.3.1

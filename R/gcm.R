@@ -9,8 +9,7 @@
 #' and the generalised covariance measure," The Annals of Statistics, 48(3),
 #' 1514-1538. \doi{10.1214/19-aos1857}
 #'
-#' @param Y Vector of response values. Can be supplied as a numeric vector or
-#'     a single column matrix.
+#' @param Y Vector or matrix of response values.
 #' @param X Matrix or data.frame of covariates.
 #' @param Z Matrix or data.frame of covariates.
 #' @param alternative A character string specifying the alternative hypothesis,
@@ -28,6 +27,12 @@
 #'     \code{B} samples.
 #' @param B Number of bootstrap samples. Only applies if \code{type = "max"} is
 #'     used.
+#' @param coin Logical; whether or not to use the \code{coin} package for
+#'     computing the test statistic and p-value. The \code{coin} package
+#'     computes variances with n - 1 degrees of freedom.
+#'     The default is \code{FALSE}.
+#' @param cointrol List; further arguments passed to
+#'     \code{\link[coin]{independence_test}}.
 #' @param ... Additional arguments passed to \code{reg_YonZ}.
 #'
 #' @returns Object of class '\code{gcm}' and '\code{htest}' with the following
@@ -56,23 +61,40 @@
 #'
 gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
                 reg_YonZ = "rf", reg_XonZ = "rf", args_XonZ = NULL,
-                type = c("quadratic", "max"), B = 499L, ...) {
+                type = c("quadratic", "max"), B = 499L, coin = FALSE,
+                cointrol = list(distribution = "asymptotic",
+                                teststat = "quadratic"), ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
   alternative <- match.arg(alternative)
   type <- match.arg(type)
   args <- if (length(list(...)) > 0) list(...) else NULL
-  YZ <- do.call(reg_YonZ, c(list(y = Y, x = Z), args))
-  rY <- stats::residuals(YZ, response = Y, data = Z)
-  rX <- apply(as.data.frame(X), 2, \(tX) {
+  if ("matrix" %in% class(Y)) {
+    rY <- apply(Y, 2, \(tY) {
+      mY <- do.call(reg_YonZ, c(list(y = tY, x = Z), args))
+      stats::residuals(mY, response = tY, data = Z)
+    })
+  } else {
+    YZ <- do.call(reg_YonZ, c(list(y = Y, x = Z), args))
+    rY <- stats::residuals(YZ, response = Y, data = Z)
+  }
+  rX <- apply(X, 2, \(tX) {
     mX <- do.call(reg_XonZ, c(list(y = tX, x = Z), args_XonZ))
     stats::residuals(mX, response = tX, data = Z)
   })
-  tst <- .gcm(rY, rX, alternative = alternative, type = type, B = B)
-  df <- tst$df
-  stat <- tst$stat
-  pval <- tst$pval
+  if (coin | NCOL(rY) > 1) {
+    tst <- do.call("independence_test", c(list(
+      rY ~ rX, alternative = alternative), cointrol))
+    df <- NCOL(rY) * NCOL(rX)
+    stat <- coin::statistic(tst)
+    pval <- coin::pvalue(tst)
+  } else {
+    tst <- .gcm(c(rY), rX, alternative = alternative, type = type, B = B)
+    df <- tst$df
+    stat <- tst$stat
+    pval <- tst$pval
+  }
 
   tname <- "Z"
   par <- NULL
@@ -105,13 +127,17 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
 .check_data <- function(x, mode = c("Y", "X", "Z")) {
   mode <- match.arg(mode)
   if (mode == "Y") {
-    N <- NROW(x)
-    ret <- c(x)
-    if (is.factor(ret) && length(levels(ret)) > 2)
-      stop("Only binary factors are allowed for Y.")
-    if (N != NROW(ret))
-      stop("Please provide Y as a vector.")
-    return(ret)
+    if (!is.matrix(x) & !is.data.frame(x)) {
+      N <- NROW(x)
+      ret <- c(x)
+      if (is.factor(ret) && length(levels(ret)) > 2)
+        stop("Only binary factors are allowed for Y.")
+      if (N != NROW(ret))
+        stop("Please provide Y as a vector.")
+      return(ret)
+    } else {
+      .check_data(x, mode = "X")
+    }
   }
   if ("tibble" %in% class(x))
     x <- as.data.frame(x)
@@ -154,7 +180,7 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
   else {
     R.sq <- RR^2
     meanR <- mean(RR)
-    stat <- sqrt(nn) * meanR/sqrt(mean(R.sq) - meanR^2)
+    stat <- sqrt(nn) * meanR / sqrt(mean(R.sq) - meanR^2)
     pval <- switch(
       alternative,
       "two.sided" = 2 * stats::pnorm(-abs(stat)),

@@ -88,6 +88,18 @@ test_that("PCM with different regressions", {
   })
 })
 
+test_that("Multi-dimensional GCM works", {
+  set.seed(12)
+  tn <- 3e2
+  set.seed(12)
+  X <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(X) <- c("X1", "X2")
+  Z <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(Z) <- c("Z1", "Z2")
+  Y <- cbind(rnorm(tn), rnorm(tn), rnorm(tn))
+  expect_no_error(gcm1 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "lasso"))
+})
+
 test_that("TRAM GCM works with coxph and survforest", {
   library("survival")
   data("GBSG2", package = "TH.data")
@@ -97,4 +109,7 @@ test_that("TRAM GCM works with coxph and survforest", {
   z <- model.matrix(~ 0 + age, data = GBSG2)
   expect_no_error(tgcm <- gcm(y, x, z, reg_YonZ = "cox"))
   expect_no_error(tgcm <- gcm(y, x, z, reg_YonZ = "survforest"))
+  debugonce(comet)
+  expect_no_error(comet(Surv(time, cens) ~ horTh | age, data = GBSG2,
+                        reg_YonZ = "cox"))
 })
