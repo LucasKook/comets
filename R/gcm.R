@@ -95,13 +95,11 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
     pval <- tst$pval
   }
 
-  tname <- "Z"
-  par <- NULL
-  if (type == "quadratic" && df > 1) {
-    tname <- "X-squared"
-    par <- c("df" = df)
-  } else if (type == "max") {
+  tname <- "X-squared"
+  par <- c("df" = df)
+  if (type == "max") {
     tname <- "|Z|"
+    par <- NULL
   }
   names(stat) <- tname
 
@@ -186,6 +184,7 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
       "greater" = 1 - stats::pnorm(stat),
       "less" = stats::pnorm(stat)
     )
+    stat <- stat^2
   }
   list("stat" = stat, "pval" = pval, df = dX)
 }

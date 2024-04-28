@@ -89,7 +89,8 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
     stat <- coin::statistic(tst)
     pval <- coin::pvalue(tst)
   } else {
-    tst <- .gcm(rY, as.matrix(rX * W), alternative = "greater", type = "max", B = B)
+    tst <- .gcm(rY, as.matrix(rX * W), alternative = "greater",
+                type = "max", B = B)
     df <- tst$df
     stat <- tst$stat
     pval <- tst$pval
