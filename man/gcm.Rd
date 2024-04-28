@@ -15,7 +15,7 @@ gcm(
   type = c("quadratic", "max"),
   B = 499L,
   coin = FALSE,
-  cointrol = list(distribution = "asymptotic", teststat = "quadratic"),
+  cointrol = list(distribution = "asymptotic"),
   ...
 )
 }

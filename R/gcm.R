@@ -62,8 +62,7 @@
 gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
                 reg_YonZ = "rf", reg_XonZ = "rf", args_XonZ = NULL,
                 type = c("quadratic", "max"), B = 499L, coin = FALSE,
-                cointrol = list(distribution = "asymptotic",
-                                teststat = "quadratic"), ...) {
+                cointrol = list(distribution = "asymptotic"), ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
@@ -85,7 +84,7 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
   })
   if (coin | NCOL(rY) > 1) {
     tst <- do.call("independence_test", c(list(
-      rY ~ rX, alternative = alternative), cointrol))
+      rY ~ rX, alternative = alternative, teststat = type), cointrol))
     df <- NCOL(rY) * NCOL(rX)
     stat <- coin::statistic(tst)
     pval <- coin::pvalue(tst)

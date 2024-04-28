@@ -109,7 +109,24 @@ test_that("TRAM GCM works with coxph and survforest", {
   z <- model.matrix(~ 0 + age, data = GBSG2)
   expect_no_error(tgcm <- gcm(y, x, z, reg_YonZ = "cox"))
   expect_no_error(tgcm <- gcm(y, x, z, reg_YonZ = "survforest"))
-  debugonce(comet)
   expect_no_error(comet(Surv(time, cens) ~ horTh | age, data = GBSG2,
                         reg_YonZ = "cox"))
+})
+
+test_that("coin for tests", {
+  expect_no_error({
+    library("coin")
+    set.seed(12)
+    tn <- 3e2
+    set.seed(12)
+    X <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(X) <- c("X1", "X2")
+    Z <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(Z) <- c("Z1", "Z2")
+    Y <- cbind(rowSums(X) + rnorm(tn), rowSums(X) + rnorm(tn))
+    gcm(Y, X, Z, type = "max", coin = TRUE, cointrol = list(
+      distribution = approximate(99)))
+    gcm(Y, X, Z, type = "quadratic", coin = TRUE, cointrol = list(
+      distribution = "asymptotic"))
+  })
 })
