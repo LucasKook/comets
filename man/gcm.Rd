@@ -28,14 +28,14 @@ gcm(
 
 \item{alternative}{A character string specifying the alternative hypothesis,
 must be one of \code{"two.sided"} (default), \code{"greater"} or
-\code{"less"}. Only applies if \code{type = "quadratic"} and \code{X}
-is one-dimensional.}
+\code{"less"}. Only applies if \code{type = "quadratic"} and \code{Y} and
+\code{X} are one-dimensional.}
 
 \item{reg_YonZ}{Character string or function specifying the regression for
-Y on Z.}
+Y on Z. See \code{?\link[comets]{regressions}} for more detail.}
 
 \item{reg_XonZ}{Character string or function specifying the regression for
-X on Z.}
+X on Z. See \code{?\link[comets]{regressions}} for more detail.}
 
 \item{args_XonZ}{Additional arguments passed to \code{reg_XonZ}.}
 
@@ -64,7 +64,7 @@ components:
 \item{\code{p.value}}{The p-value for the \code{hypothesis}}
 \item{\code{parameter}}{In case X is multidimensional, this is the degrees of
     freedom used for the chi-squared test.}
-\item{\code{hypothesis}}{String specifying the null hypothesis .}
+\item{\code{hypothesis}}{String specifying the null hypothesis.}
 \item{\code{null.value}}{String specifying the null hypothesis.}
 \item{\code{method}}{The string \code{"Generalised covariance measure test"}.}
 \item{\code{data.name}}{A character string giving the name(s) of the data.}

@@ -1,6 +1,31 @@
 
 # Random forest -----------------------------------------------------------
 
+#' Implemented regression methods
+#' @rdname regressions
+#' @param y Vector (or matrix) of response values.
+#' @param x Design matrix of predictors.
+#' @param ... Additional arguments passed to the underlying regression method.
+#'    In case of \code{"rf"}, \code{"survforest"} and \code{"qrf"}, this is
+#'    \code{\link[ranger]{ranger}}. In case of \code{"lasso"} and
+#'    \code{"ridge"}, this is \code{\link[glmnet]{glmnet}}. In case of
+#'    \code{"cox"}, this is \code{\link[survival]{coxph}}.
+#' @details
+#' The implemented choices are \code{"rf"} for random forests as implemented in
+#' ranger, \code{"lasso"} for cross-validated Lasso regression, \code{"ridge"}
+#' for cross-validated ridge regression, \code{"cox"} for the Cox proportional
+#' hazards model as implemented in survival, \code{"qrf"} or \code{"survforest"}
+#' for quantile and survival random forests, respectively.
+#' New regression methods can be implemented and supplied as well and need the
+#' following structure. The regression method \code{"custom_reg"} needs to take
+#' arguments \code{y, x, ...}, fit the model using \code{y} and \code{x} as
+#' matrices and return an object of a user-specified class, for instance,
+#' '\code{custom}'. For the GCM test, implementing a \code{residuals.custom}
+#' method is sufficient, which should take arguments
+#' \code{object, response = NULL, data = NULL, ...}. For the PCM test, a
+#' \code{predict.custom} method is necessary for out-of-sample prediction
+#' and computation of residuals.
+#'
 rf <- function(y, x, ...) {
   args <- list(...)
   if (length(unique(y)) == 2) {
@@ -28,6 +53,7 @@ residuals.rf <- function(object, response = NULL, data = NULL, ...) {
 }
 
 ### Survival forest
+#' @rdname regressions
 survforest <- function(y, x, ...) {
   rf <- ranger::ranger(y = y, x = x, ...)
   class(rf) <- c("survforest", class(rf))
@@ -48,6 +74,7 @@ residuals.survforest <- function(object, response, data, ...) {
 }
 
 ### Quantile forest
+#' @rdname regressions
 qrf <- function(y, x, ...) {
   rf <- ranger::ranger(y = y, x = x, ...)
   rf$response <- y
@@ -77,6 +104,7 @@ residuals.qrf <- \(object, data, ...) {
 # Lasso/ridge -------------------------------------------------------------
 
 #' @importFrom glmnet cv.glmnet
+#' @rdname regressions
 lasso <- function(y, x, ...) {
   obj <- cv.glmnet(y = y, x = as.matrix(x), ...)
   class(obj) <- c("lasso", class(obj))
@@ -95,6 +123,7 @@ residuals.lasso <- function(object, response = NULL, data = NULL, ...) {
   .compute_residuals(response, preds)
 }
 
+#' @rdname regressions
 ridge <- function(y, x, ...) {
   obj <- cv.glmnet(y = y, x = as.matrix(x), alpha = 0, ...)
   class(obj) <- c("lasso", class(obj))
@@ -103,6 +132,7 @@ ridge <- function(y, x, ...) {
 
 # Cox ---------------------------------------------------------------------
 
+#' @rdname regressions
 cox <- function(y, x, ...) {
   obj <- survival::coxph(y ~ x, ...)
   class(obj) <- c("cox", class(obj))

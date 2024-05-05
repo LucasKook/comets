@@ -15,9 +15,10 @@
 #'     a single column matrix.
 #' @param reg_wfun Character string or function specifying the regression for
 #'     estimating the weighting function.
+#'     See \code{?\link[comets]{regressions}} for more detail.
 #' @param args_wfun Additional arguments passed to \code{reg_XonZ}.
-#' @param frac Relative size of train split
-#' @param ... Additional arguments passed to \code{reg_YonZ}
+#' @param frac Relative size of train split.
+#' @param ... Additional arguments passed to \code{reg_YonZ}.
 #'
 #' @returns Object of class '\code{wgcm}' and '\code{htest}' with the following
 #' components:

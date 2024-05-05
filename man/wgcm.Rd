@@ -29,19 +29,20 @@ a single column matrix.}
 \item{Z}{Matrix or data.frame of covariates.}
 
 \item{reg_YonZ}{Character string or function specifying the regression for
-Y on Z.}
+Y on Z. See \code{?\link[comets]{regressions}} for more detail.}
 
 \item{reg_XonZ}{Character string or function specifying the regression for
-X on Z.}
+X on Z. See \code{?\link[comets]{regressions}} for more detail.}
 
 \item{reg_wfun}{Character string or function specifying the regression for
-estimating the weighting function.}
+estimating the weighting function.
+See \code{?\link[comets]{regressions}} for more detail.}
 
 \item{args_XonZ}{Additional arguments passed to \code{reg_XonZ}.}
 
 \item{args_wfun}{Additional arguments passed to \code{reg_XonZ}.}
 
-\item{frac}{Relative size of train split}
+\item{frac}{Relative size of train split.}
 
 \item{B}{Number of bootstrap samples. Only applies if \code{type = "max"} is
 used.}
@@ -54,7 +55,7 @@ The default is \code{FALSE}.}
 \item{cointrol}{List; further arguments passed to
 \code{\link[coin]{independence_test}}.}
 
-\item{...}{Additional arguments passed to \code{reg_YonZ}}
+\item{...}{Additional arguments passed to \code{reg_YonZ}.}
 }
 \value{
 Object of class '\code{wgcm}' and '\code{htest}' with the following

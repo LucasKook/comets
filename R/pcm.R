@@ -2,7 +2,7 @@
 #'
 #' @details
 #' The projected covariance measure test tests whether the conditional
-#' mean of Y given X and Z depends on X.
+#' mean of Y given X and Z is independent of X.
 #'
 #' @references
 #' Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2022). The
@@ -16,24 +16,29 @@
 #' @param est_vhat Logical; whether to estimate the variance functional
 #' @param reg_YonXZ Character string or function specifying the regression
 #'     for Y on X and Z, default is \code{"rf"} for random forest.
+#'     See \code{?\link[comets]{regressions}} for more detail.
 #' @param reg_YonZ Character string or function specifying the regression
 #'     for Y on Z, default is \code{"rf"} for random forest.
+#'     See \code{?\link[comets]{regressions}} for more detail.
 #' @param reg_YhatonZ Character string or function specifying the regression
 #'     for the predicted values of \code{reg_YonXZ} on Z, default is \code{"rf"}
 #'     for random forest.
+#'     See \code{?\link[comets]{regressions}} for more detail.
 #' @param reg_VonXZ Character string or function specifying the regression
 #'     for estimating the conditional variance of Y given X and Z, default
-#'      is \code{"rf"} for random forest.
+#'     is \code{"rf"} for random forest.
+#'     See \code{?\link[comets]{regressions}} for more detail.
 #' @param reg_RonZ Character string or function specifying the regression
 #'     for the estimated transformation of Y, X, and Z on Z, default is
-#'      \code{"rf"} for random forest.
-#' @param args_YonXZ Arguments passed to \code{reg_YonXZ}
-#' @param args_YonZ Arguments passed to \code{reg_YonZ}
-#' @param args_YhatonZ Arguments passed to \code{reg_YhatonZ}
-#' @param args_VonXZ Arguments passed to \code{reg_VonXZ}
-#' @param args_RonZ Arguments passed to \code{reg_RonZ}
-#' @param frac Relative size of train split
-#' @param ... Additional arguments currently ignored
+#'     \code{"rf"} for random forest.
+#'     See \code{?\link[comets]{regressions}} for more detail.
+#' @param args_YonXZ Arguments passed to \code{reg_YonXZ}.
+#' @param args_YonZ Arguments passed to \code{reg_YonZ}.
+#' @param args_YhatonZ Arguments passed to \code{reg_YhatonZ}.
+#' @param args_VonXZ Arguments passed to \code{reg_VonXZ}.
+#' @param args_RonZ Arguments passed to \code{reg_RonZ}.
+#' @param frac Relative size of train split.
+#' @param ... Additional arguments currently ignored.
 #'
 #' @importFrom ranger ranger
 #' @importFrom coin independence_test
