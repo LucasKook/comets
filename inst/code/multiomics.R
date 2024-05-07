@@ -54,8 +54,8 @@ nrep <- 10
            rep = nrep))
 
 (t4 <- pcm(dat[, response][, 2], dat[, n_rna], dat[, c(n_mir, n_meth)],
-           rep = nrep, reg = "lasso"))
+           rep = nrep, reg_YonXZ = "lasso"))
 (t5 <- pcm(dat[, response][, 2], dat[, n_mir], dat[, c(n_rna, n_meth)],
-           rep = nrep, reg = "lasso"))
+           rep = nrep, reg_YonXZ = "lasso"))
 (t6 <- pcm(dat[, response][, 2], dat[, n_meth], dat[, c(n_rna, n_mir)],
-           rep = nrep, reg = "lasso"))
+           rep = nrep, reg_YonXZ = "lasso"))

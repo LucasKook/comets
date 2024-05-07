@@ -2,7 +2,7 @@
 #'
 #' @details
 #' The projected covariance measure test tests whether the conditional
-#' mean of Y given X and Z depends on X.
+#' mean of Y given X and Z is independent of X.
 #'
 #' @references
 #' Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2022). The
@@ -10,18 +10,38 @@
 #' testing. arXiv preprint. \doi{10.48550/arXiv.2211.02039}
 #'
 #' @inheritParams gcm
+#' @param Y Vector of response values. Can be supplied as a numeric vector or
+#'     a single column matrix.
 #' @param rep Number of repetitions with which to repeat the PCM test
 #' @param est_vhat Logical; whether to estimate the variance functional
 #' @param reg_YonXZ Character string or function specifying the regression
 #'     for Y on X and Z, default is \code{"rf"} for random forest.
+#'     See \code{?\link[comets]{regressions}} for more detail.
 #' @param reg_YonZ Character string or function specifying the regression
 #'     for Y on Z, default is \code{"rf"} for random forest.
-#' @param mtry Argument passed to \code{ranger}
-#' @param args_YonXZ Arguments passed to \code{reg}
-#' @param args_YonZ Arguments passed to \code{reg}
-#' @param ... Additional arguments passed to \code{ranger}
+#'     See \code{?\link[comets]{regressions}} for more detail.
+#' @param reg_YhatonZ Character string or function specifying the regression
+#'     for the predicted values of \code{reg_YonXZ} on Z, default is \code{"rf"}
+#'     for random forest.
+#'     See \code{?\link[comets]{regressions}} for more detail.
+#' @param reg_VonXZ Character string or function specifying the regression
+#'     for estimating the conditional variance of Y given X and Z, default
+#'     is \code{"rf"} for random forest.
+#'     See \code{?\link[comets]{regressions}} for more detail.
+#' @param reg_RonZ Character string or function specifying the regression
+#'     for the estimated transformation of Y, X, and Z on Z, default is
+#'     \code{"rf"} for random forest.
+#'     See \code{?\link[comets]{regressions}} for more detail.
+#' @param args_YonXZ Arguments passed to \code{reg_YonXZ}.
+#' @param args_YonZ Arguments passed to \code{reg_YonZ}.
+#' @param args_YhatonZ Arguments passed to \code{reg_YhatonZ}.
+#' @param args_VonXZ Arguments passed to \code{reg_VonXZ}.
+#' @param args_RonZ Arguments passed to \code{reg_RonZ}.
+#' @param frac Relative size of train split.
+#' @param ... Additional arguments currently ignored.
 #'
 #' @importFrom ranger ranger
+#' @importFrom coin independence_test
 #'
 #' @returns Object of class '\code{pcm}' and '\code{htest}' with the following
 #' components:
@@ -43,81 +63,91 @@
 #' colnames(X) <- c("X1", "X2")
 #' Z <- matrix(rnorm(2 * n), ncol = 2)
 #' colnames(Z) <- c("Z1", "Z2")
-#' Y <- rnorm(n) # X[, 2] + Z[, 2] + rnorm(1e3)
+#' Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 #' (pcm1 <- pcm(Y, X, Z))
 #'
 pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
-                reg_YonZ = "rf", args_YonXZ = NULL, args_YonZ = NULL,
-                mtry = identity, ...) {
+                reg_YonZ = "rf", reg_YhatonZ = "rf", reg_VonXZ = "rf",
+                reg_RonZ = "rf", args_YonXZ = NULL, args_YonZ = NULL,
+                args_YhatonZ = list(mtry = identity),
+                args_VonXZ = list(mtry = identity),
+                args_RonZ = list(mtry = identity),
+                frac = 0.5, coin = FALSE, cointrol = NULL, ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
   if (rep != 1) {
     pcms <- lapply(seq_len(rep), \(iter) {
       pcm(Y = Y, X = X, Z = Z, rep = 1, est_vhat = est_vhat,
-          reg_YonXZ = reg_YonXZ, reg_YonZ = reg_YonZ, args_YonXZ = args_YonXZ,
-          args_YonZ = args_YonZ, mtry = mtry, ... = ...)
+          reg_YonXZ = reg_YonXZ, reg_YonZ = reg_YonZ,
+          reg_YhatonZ = reg_YhatonZ, reg_VonXZ = reg_VonXZ,
+          reg_RonZ = reg_RonZ, args_YonXZ = args_YonXZ,
+          args_YonZ = args_YonZ, args_YhatonZ = args_YhatonZ,
+          args_VonXZ = args_VonXZ, args_RonZ = args_RonZ,
+          ... = ...)
     })
     stat <- mean(unlist(lapply(pcms, \(tst) tst$statistic)))
     pval <- pnorm(stat, lower.tail = FALSE)
-    return(structure(list(
-      statistic = c("Z" = stat), p.value = pval,
-      hypothesis = c("E[Y | X, Z]" = "E[Y | Z]"),
-      null.value = c("E[Y | X, Z]" = "E[Y | Z]"), alternative = "two.sided",
-      method = paste0("Projected covariance measure test (K = ", rep, " repetitions)"),
-      all_tests = pcms, data.name = deparse(match.call(), width.cutoff = 80)),
-      class = c("pcm", "htest")))
+    dcheck <- do.call("rbind", lapply(1:rep, \(x) {
+      data.frame(iter = x, pcms[[x]]$check.data)
+    }))
+  } else {
+    ### Sample splitting
+    dsp <- .split_sample(Y, X, Z, frac = frac)
+    Ytr <- dsp$Ytr
+    Xtr <- dsp$Xtr
+    Ztr <- dsp$Ztr
+    Yte <- dsp$Yte
+    Xte <- dsp$Xte
+    Zte <- dsp$Zte
+    idx <- dsp$idx
+
+    ### Obtain hat{h}
+    ghat <- do.call(reg_YonXZ, c(list(y = Ytr, x = cbind(Xtr, Ztr)), args_YonXZ))
+    pghat <- predict(ghat, data = cbind(Xtr, Ztr))
+    mtilde <- do.call(reg_YhatonZ, c(list(x = Ztr, y = pghat), args_YhatonZ))
+    htilde <- \(X, Z) predict(ghat, data = cbind(X, Z)) - predict(mtilde, data = Z)
+    rho <- mean(stats::residuals(mtilde, response = Ytr, data = Ztr) *
+                  predict(ghat, data = cbind(Xtr, Ztr)))
+    hhat <- \(X, Z) sign(rho) * htilde(X, Z)
+
+    ### Obtain hat{v}
+    if (est_vhat) {
+      sqr <- stats::residuals(ghat, response = Ytr, data = cbind(Xtr, Ztr))^2
+      vtilde <- do.call(reg_VonXZ, c(list(x = cbind(Xtr, Ztr), y = sqr), args_VonXZ))
+      a <- function(c) mean(sqr / (pmax(predict(vtilde, data = cbind(Xtr, Ztr)), 0) + c))
+      chat <- if (a(0) < 1) 0 else stats::uniroot(\(c) a(c) - 1, c(0, 10), extendInt = "yes")$root
+      vhat <- \(X, Z) pmax(predict(vtilde, data = cbind(X, Z)), 0) + chat
+    }
+    else
+      vhat <- \(X, Z) 1
+
+    ### Obtain residuals for test
+    fhat <- \(X, Z) hhat(X, Z) / vhat(X, Z)
+    fhats <- fhat(Xte, Zte)
+    mhatfhat <- do.call(reg_RonZ, c(list(x = Zte, y = fhats), args_RonZ))
+    mhat <- do.call(reg_YonZ, c(list(y = Yte, x = Zte), args_YonZ))
+
+    ### Test
+    rY <- stats::residuals(mhat, response = Yte, data = Zte)
+    rT <- fhats - predict(mhatfhat, data = Zte)
+
+    if (coin) {
+      tst <- do.call("independence_test", c(list(
+        rY ~ rT, alternative = "greater", teststat = "scalar"), cointrol))
+      stat <- coin::statistic(tst)
+      pval <- coin::pvalue(tst)
+    } else {
+      L <- rY * rT
+      stat <- sqrt(NROW(Yte)) * mean(L) / sqrt(mean(L^2) - mean(L)^2)
+      if (is.nan(stat)) stat <- -Inf
+      pval <- pnorm(stat, lower.tail = FALSE)
+    }
+
+
+    dcheck <- data.frame(id = setdiff(seq_len(NROW(Y)), idx),
+                         rY = rY, rT = rT, iter = 1)
   }
-  ### Sample splitting
-  idx <- sample.int(NROW(Y), ceiling(NROW(Y) / 2))
-  ### Split 1
-  Ytr <- Y[idx]
-  Xtr <- data.frame(X)[idx, , drop = FALSE]
-  Ztr <- data.frame(Z)[idx, , drop = FALSE]
-  ### Split 2
-  Yte <- Y[-idx]
-  Xte <- data.frame(X)[-idx, , drop = FALSE]
-  Zte <- data.frame(Z)[-idx, , drop = FALSE]
-
-  ### Obtain hat{h}
-  ghat <- do.call(reg_YonXZ, c(list(y = Ytr, x = cbind(Xtr, Ztr)), args_YonXZ))
-  mtilde <- ranger(x = Ztr, y = pghat <- predict(ghat, data = cbind(Xtr, Ztr)),
-                   mtry = mtry, ...)
-  htilde <- \(X, Z) {
-    predict(ghat, data = cbind(X, Z)) -
-      predict(mtilde, data = Z)$predictions
-  }
-  rho <- mean((Ytr - mtilde$predictions) * predict(ghat, data = cbind(Xtr, Ztr)))
-  hhat <- \(X, Z) sign(rho) * htilde(X, Z)
-
-  ### Obtain hat{v}
-  if (est_vhat) {
-    vtilde <- ranger(x = cbind(Xtr, Ztr), y = (sqr <- (Ytr - predict(
-      ghat, data = cbind(Xtr, Ztr)))^2), mtry = mtry, ...)
-    a <- function(c) mean(sqr / (pmax(vtilde$predictions, 0) + c))
-    chat <- if (a(0) < 1) 0 else stats::uniroot(\(c) a(c) - 1, c(0, 10), extendInt = "yes")$root
-    vhat <- \(X, Z) pmax(predict(vtilde, data = cbind(X, Z))$predictions, 0) + chat
-  }
-  else
-    vhat <- \(X, Z) 1
-
-  ### Obtain residuals for test
-  fhat <- \(X, Z) hhat(X, Z) / vhat(X, Z)
-  mhatfhat <- ranger(x = Zte, y = (fhats <- fhat(Xte, Zte)), mtry = mtry, ...)
-  mhat <- do.call(reg_YonZ, c(list(y = Yte, x = Zte), args_YonZ))
-
-  ### Test
-  L <- (Yte - predict(mhat, data = Zte)) * (fhats - mhatfhat$predictions)
-  stat <- sqrt(length(idx)) * mean(L) / sqrt(mean(L^2) - mean(L)^2)
-  if (is.nan(stat)) stat <- -Inf
-  pval <- pnorm(stat, lower.tail = FALSE)
-
-  mhats <- predict(mhat, data = Zte)
-  dcheck <- data.frame(
-    id = setdiff(seq_len(NROW(Y)), idx),
-    resid_mhat = (Yte - mhats),
-    resid_mhatfhat = (fhats - mhatfhat$predictions)
-  )
 
   structure(list(
     statistic = c("Z" = stat), p.value = pval,
@@ -125,42 +155,22 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
     null.value = c("E[Y | X, Z]" = "E[Y | Z]"), alternative = "two.sided",
     method = paste0("Projected covariance measure test"),
     data.name = deparse(match.call(), width.cutoff = 80),
-    check.data = dcheck), class = c("pcm", "htest"))
+    check.data = dcheck, rep = rep), class = c("pcm", "htest"))
 }
 
-# Regressions -------------------------------------------------------------
+# Helpers -----------------------------------------------------------------
 
-rf <- function(y, x, ...) {
-  args <- list(...)
-  if (length(unique(y)) == 2) {
-    y <- as.factor(y)
-    args$probability <- TRUE
-  }
-  rf <- do.call("ranger", c(list(y = y, x = x), args))
-  class(rf) <- c("rf", class(rf))
-  rf
-}
-
-#' @exportS3Method predict rf
-predict.rf <- function(object, data = NULL, ...) {
-  class(object) <- class(object)[-1]
-  preds <- predict(object, data = data)$predictions
-  if (object$treetype == "Probability estimation")
-    preds <- preds[, 2]
-  preds
-}
-
-#' @importFrom glmnet cv.glmnet
-lasso <- function(y, x, ...) {
-  obj <- cv.glmnet(y = y, x = as.matrix(x), ...)
-  class(obj) <- c("lasso", class(obj))
-  obj
-}
-
-#' @exportS3Method predict lasso
-predict.lasso <- function(object, data = NULL, ...) {
-  class(object) <- class(object)[-1]
-  predict(object, newx = as.matrix(data), s = object$lambda.min)[, 1]
+.split_sample <- function(Y, X, Z, frac = 0.5) {
+  idx <- sample.int(NROW(Y), ceiling(frac * NROW(Y)))
+  ### Split 1
+  Ytr <- Y[idx]
+  Xtr <- as.matrix(data.frame(X)[idx, , drop = FALSE])
+  Ztr <- as.matrix(data.frame(Z)[idx, , drop = FALSE])
+  ### Split 2
+  Yte <- Y[-idx]
+  Xte <- as.matrix(data.frame(X)[-idx, , drop = FALSE])
+  Zte <- as.matrix(data.frame(Z)[-idx, , drop = FALSE])
+  list(Ytr = Ytr, Xtr = Xtr, Ztr = Ztr, Yte = Yte, Xte = Xte, Zte = Zte, idx = idx)
 }
 
 # Diagnostics -------------------------------------------------------------
@@ -171,12 +181,13 @@ plot.pcm <- function(x, ...) {
   test <- x$check.data
   if (requireNamespace("ggplot2") && requireNamespace("tidyr")) {
     mpl <- \(xx, yy, pdat, ...) {
-      ggplot2::ggplot(pdat, ggplot2::aes(y = .data[[yy]], x = .data[[xx]])) +
-        ggplot2::geom_point(alpha = 0.3) +
-        ggplot2::geom_smooth(se = FALSE, method = "lm") +
+      ggplot2::ggplot(pdat, ggplot2::aes(y = .data[[yy]], x = .data[[xx]],
+                                         color = factor(.data[["iter"]]))) +
+        ggplot2::geom_point(alpha = 0.3, show.legend = FALSE) +
+        ggplot2::geom_smooth(se = FALSE, method = "lm", show.legend = FALSE) +
         ggplot2::theme_bw()
     }
-    p2 <- mpl("resid_mhat", "resid_mhatfhat", test) +
+    p2 <- mpl("rT", "rY", test) +
       ggplot2::labs(x = "Residuals f(X, Z) | Z", y = "Residuals Y | Z")
     print(p2)
   }

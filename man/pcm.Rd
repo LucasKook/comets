@@ -12,9 +12,17 @@ pcm(
   est_vhat = TRUE,
   reg_YonXZ = "rf",
   reg_YonZ = "rf",
+  reg_YhatonZ = "rf",
+  reg_VonXZ = "rf",
+  reg_RonZ = "rf",
   args_YonXZ = NULL,
   args_YonZ = NULL,
-  mtry = identity,
+  args_YhatonZ = list(mtry = identity),
+  args_VonXZ = list(mtry = identity),
+  args_RonZ = list(mtry = identity),
+  frac = 0.5,
+  coin = FALSE,
+  cointrol = NULL,
   ...
 )
 }
@@ -31,18 +39,49 @@ a single column matrix.}
 \item{est_vhat}{Logical; whether to estimate the variance functional}
 
 \item{reg_YonXZ}{Character string or function specifying the regression
-for Y on X and Z, default is \code{"rf"} for random forest.}
+for Y on X and Z, default is \code{"rf"} for random forest.
+See \code{?\link[comets]{regressions}} for more detail.}
 
 \item{reg_YonZ}{Character string or function specifying the regression
-for Y on Z, default is \code{"rf"} for random forest.}
+for Y on Z, default is \code{"rf"} for random forest.
+See \code{?\link[comets]{regressions}} for more detail.}
 
-\item{args_YonXZ}{Arguments passed to \code{reg}}
+\item{reg_YhatonZ}{Character string or function specifying the regression
+for the predicted values of \code{reg_YonXZ} on Z, default is \code{"rf"}
+for random forest.
+See \code{?\link[comets]{regressions}} for more detail.}
 
-\item{args_YonZ}{Arguments passed to \code{reg}}
+\item{reg_VonXZ}{Character string or function specifying the regression
+for estimating the conditional variance of Y given X and Z, default
+is \code{"rf"} for random forest.
+See \code{?\link[comets]{regressions}} for more detail.}
 
-\item{mtry}{Argument passed to \code{ranger}}
+\item{reg_RonZ}{Character string or function specifying the regression
+for the estimated transformation of Y, X, and Z on Z, default is
+\code{"rf"} for random forest.
+See \code{?\link[comets]{regressions}} for more detail.}
 
-\item{...}{Additional arguments passed to \code{ranger}}
+\item{args_YonXZ}{Arguments passed to \code{reg_YonXZ}.}
+
+\item{args_YonZ}{Arguments passed to \code{reg_YonZ}.}
+
+\item{args_YhatonZ}{Arguments passed to \code{reg_YhatonZ}.}
+
+\item{args_VonXZ}{Arguments passed to \code{reg_VonXZ}.}
+
+\item{args_RonZ}{Arguments passed to \code{reg_RonZ}.}
+
+\item{frac}{Relative size of train split.}
+
+\item{coin}{Logical; whether or not to use the \code{coin} package for
+computing the test statistic and p-value. The \code{coin} package
+computes variances with n - 1 degrees of freedom.
+The default is \code{FALSE}.}
+
+\item{cointrol}{List; further arguments passed to
+\code{\link[coin]{independence_test}}.}
+
+\item{...}{Additional arguments currently ignored.}
 }
 \value{
 Object of class '\code{pcm}' and '\code{htest}' with the following
@@ -62,7 +101,7 @@ Projected covariance measure test for conditional mean independence
 }
 \details{
 The projected covariance measure test tests whether the conditional
-mean of Y given X and Z depends on X.
+mean of Y given X and Z is independent of X.
 }
 \examples{
 n <- 150
@@ -70,7 +109,7 @@ X <- matrix(rnorm(2 * n), ncol = 2)
 colnames(X) <- c("X1", "X2")
 Z <- matrix(rnorm(2 * n), ncol = 2)
 colnames(Z) <- c("Z1", "Z2")
-Y <- rnorm(n) # X[, 2] + Z[, 2] + rnorm(1e3)
+Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 (pcm1 <- pcm(Y, X, Z))
 
 }

@@ -1,7 +1,7 @@
 Package: comets
 Type: Package
 Title: Covariance Measure Tests for Conditional Independence 
-Version: 0.0-1
+Version: 0.0-2
 Authors@R: c(person("Lucas", "Kook", email = "lucasheinrich.kook@gmail.com",
     role = c("aut", "cre")), person("Anton Rask", "Lundborg", role = "ctb"))
 Description: Covariance measure tests for conditional independence testing 
@@ -11,10 +11,10 @@ Description: Covariance measure tests for conditional independence testing
     measure test (Lundborg et al., 2023, <doi:10.48550/arXiv.2211.02039>). 
     Applications can be found in 
     Kook and Lundborg (2024, <doi:10.48550/arXiv.2402.14416>).
-Imports: ranger, glmnet, Formula
+Imports: ranger, glmnet, Formula, survival, coin
 License: GPL-3
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 Suggests: 
     testthat (>= 3.0.0), ggplot2, tidyr, dplyr
 Config/testthat/edition: 3

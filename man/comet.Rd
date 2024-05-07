@@ -4,7 +4,7 @@
 \alias{comet}
 \title{Covariance measure tests with formula interface}
 \usage{
-comet(formula, data, test = c("gcm", "pcm"), ...)
+comet(formula, data, test = c("gcm", "pcm", "wgcm"), ...)
 }
 \arguments{
 \item{formula}{Formula of the form \code{Y ~ X | Z} for testing Y independent
@@ -12,13 +12,13 @@ of X given Z.}
 
 \item{data}{Data.frame containing the variables in \code{formula}.}
 
-\item{test}{Character string; \code{"gcm"} or \code{"pcm"}.}
+\item{test}{Character string; \code{"gcm"}, \code{"pcm"}, or \code{"wgcm"}.}
 
 \item{...}{Additional arguments passed to \code{test}.}
 }
 \value{
-Object of class \code{"gcm"} or \code{"pcm"} and \code{"htest"}.
-    See \code{\link{gcm}} and \code{\link{pcm}} for details.
+Object of class \code{"gcm"}, \code{"wgcm"} or \code{"pcm"} and
+    \code{"htest"}. See \code{\link{gcm}} and \code{\link{pcm}} for details.
 }
 \description{
 Covariance measure tests with formula interface
