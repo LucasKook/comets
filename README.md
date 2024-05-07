@@ -20,14 +20,16 @@ is not independent of *X* given *Z*. More elaborate examples including
 conditional variable significance testing and modality selection on
 real-world data can be found in \[3\].
 
-    set.seed(1)
-    n <- 300
-    X <- matrix(rnorm(2 * n), ncol = 2)
-    colnames(X) <- c("X1", "X2")
-    Z <- matrix(rnorm(2 * n), ncol = 2)
-    colnames(Z) <- c("Z1", "Z2")
-    Y <- X[, 1]^2 + Z[, 2] + rnorm(n)
-    GCM <- gcm(Y, X, Z) # plot(GCM)
+``` r
+set.seed(1)
+n <- 300
+X <- matrix(rnorm(2 * n), ncol = 2)
+colnames(X) <- c("X1", "X2")
+Z <- matrix(rnorm(2 * n), ncol = 2)
+colnames(Z) <- c("Z1", "Z2")
+Y <- X[, 1]^2 + Z[, 2] + rnorm(n)
+GCM <- gcm(Y, X, Z) # plot(GCM)
+```
 
 The output for the GCM test, which fails to reject the null hypothesis
 of conditional independence in this example, is shown below. The
@@ -43,7 +45,9 @@ investigated by calling `plot(GCM)` (not shown here).
 
 The PCM test can be run likewise.
 
-    PCM <- pcm(Y, X, Z) # plot(PCM)
+``` r
+PCM <- pcm(Y, X, Z) # plot(PCM)
+```
 
 The output is shown below: The PCM test correctly rejects the null
 hypothesis of conditional independence in this example.
@@ -56,12 +60,14 @@ hypothesis of conditional independence in this example.
     ## alternative hypothesis: true E[Y | X, Z] is not equal to E[Y | Z]
 
 The `comets` package contains an alternative formula-based interface, in
-which $H\_0 : Y \perp\hspace{-5pt}\perp X \mid Z$ can be supplied as
+which $H_0 : Y \perp\hspace{-5pt}\perp X \mid Z$ can be supplied as
 `Y ~ X | Z` with a corresponding `data` argument. This interface is
 implemented in `comet()` and shown below.
 
-    dat <- data.frame(Y = Y, X, Z)
-    comet(Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
+``` r
+dat <- data.frame(Y = Y, X, Z)
+comet(Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
+```
 
     ## 
     ##  Generalized covariance measure test
@@ -100,12 +106,16 @@ output of `predict.my_regression()` should be a vector of length
 
 The development version of `comets` can be installed using:
 
-    # install.packages("remotes")
-    remotes::install_github("LucasKook/comets")
+``` r
+# install.packages("remotes")
+remotes::install_github("LucasKook/comets")
+```
 
 A stable version of `comets` can be installed from CRAN via:
 
-    install.packages("comets")
+``` r
+install.packages("comets")
+```
 
 # Replication materials
 
