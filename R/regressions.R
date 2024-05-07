@@ -12,10 +12,14 @@
 #'    \code{"cox"}, this is \code{\link[survival]{coxph}}.
 #' @details
 #' The implemented choices are \code{"rf"} for random forests as implemented in
-#' ranger, \code{"lasso"} for cross-validated Lasso regression, \code{"ridge"}
-#' for cross-validated ridge regression, \code{"cox"} for the Cox proportional
+#' ranger, \code{"lasso"} for cross-validated Lasso regression (using the
+#' one-standard error rule), \code{"ridge"}
+#' for cross-validated ridge regression (using the one-standard error rule),
+#' \code{"cox"} for the Cox proportional
 #' hazards model as implemented in survival, \code{"qrf"} or \code{"survforest"}
-#' for quantile and survival random forests, respectively.
+#' for quantile and survival random forests, respectively. The option
+#' \code{"postlasso"} option refers to a cross-validated LASSO (using the
+#' one-standard error rule) and subsequent OLS regression.
 #' New regression methods can be implemented and supplied as well and need the
 #' following structure. The regression method \code{"custom_reg"} needs to take
 #' arguments \code{y, x, ...}, fit the model using \code{y} and \code{x} as
@@ -114,7 +118,7 @@ lasso <- function(y, x, ...) {
 #' @exportS3Method predict lasso
 predict.lasso <- function(object, data = NULL, ...) {
   class(object) <- class(object)[-1]
-  predict(object, newx = as.matrix(data), s = object$lambda.min)[, 1]
+  predict(object, newx = as.matrix(data), s = "lambda.1se")[, 1]
 }
 
 #' @exportS3Method residuals lasso
@@ -128,6 +132,29 @@ ridge <- function(y, x, ...) {
   obj <- cv.glmnet(y = y, x = as.matrix(x), alpha = 0, ...)
   class(obj) <- c("lasso", class(obj))
   obj
+}
+
+#' @rdname regressions
+postlasso <- function(y, x, ...) {
+  obj <- cv.glmnet(y = y, x = as.matrix(x), ...)
+  nz <- which(stats::coef(obj, s = "lambda.1se")[-1] != 0)
+  obj <- if (!identical(nz, integer(0))) stats::lm(y ~ x[, nz]) else
+    stats::lm(y ~ 1)
+  obj$nz <- nz
+  class(obj) <- c("postlasso", class(obj))
+  obj
+}
+
+#' @exportS3Method predict postlasso
+predict.postlasso <- function(object, data = NULL, ...) {
+  class(object) <- class(object)[-1]
+  c(cbind(1, as.matrix(data)[, object[["nz"]]]) %*% object[["coefficients"]])
+}
+
+#' @exportS3Method residuals postlasso
+residuals.postlasso <- function(object, response = NULL, data = NULL, ...) {
+  preds <- predict.postlasso(object, data)
+  .compute_residuals(response, preds)
 }
 
 # Cox ---------------------------------------------------------------------

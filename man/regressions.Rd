@@ -6,6 +6,7 @@
 \alias{qrf}
 \alias{lasso}
 \alias{ridge}
+\alias{postlasso}
 \alias{cox}
 \title{Implemented regression methods}
 \usage{
@@ -18,6 +19,8 @@ qrf(y, x, ...)
 lasso(y, x, ...)
 
 ridge(y, x, ...)
+
+postlasso(y, x, ...)
 
 cox(y, x, ...)
 }
@@ -37,10 +40,14 @@ Implemented regression methods
 }
 \details{
 The implemented choices are \code{"rf"} for random forests as implemented in
-ranger, \code{"lasso"} for cross-validated Lasso regression, \code{"ridge"}
-for cross-validated ridge regression, \code{"cox"} for the Cox proportional
+ranger, \code{"lasso"} for cross-validated Lasso regression (using the
+one-standard error rule), \code{"ridge"}
+for cross-validated ridge regression (using the one-standard error rule),
+\code{"cox"} for the Cox proportional
 hazards model as implemented in survival, \code{"qrf"} or \code{"survforest"}
-for quantile and survival random forests, respectively.
+for quantile and survival random forests, respectively. The option
+\code{"postlasso"} option refers to a cross-validated LASSO (using the
+one-standard error rule) and subsequent OLS regression.
 New regression methods can be implemented and supplied as well and need the
 following structure. The regression method \code{"custom_reg"} needs to take
 arguments \code{y, x, ...}, fit the model using \code{y} and \code{x} as
