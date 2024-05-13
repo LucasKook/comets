@@ -100,6 +100,10 @@ test_that("Multi-dimensional GCM works", {
   colnames(Z) <- c("Z1", "Z2")
   Y <- cbind(rnorm(tn), rnorm(tn), rnorm(tn))
   expect_no_error(gcm1 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "lasso"))
+  ### With multi-level factor as Y
+  expect_no_error(comet(Species ~ Sepal.Length | Sepal.Width, data = iris))
+  expect_error(comet(Species ~ Sepal.Length | Sepal.Width, data = iris, test = "pcm"))
+  expect_error(comet(Species ~ Sepal.Length | Sepal.Width, data = iris, test = "wgcm"))
 })
 
 test_that("TRAM GCM works with coxph and survforest", {

@@ -47,7 +47,7 @@
 wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
                  args_XonZ = NULL, args_wfun = NULL, frac = 0.5,
                  B = 499L, coin = FALSE, cointrol = NULL, ...) {
-  Y <- .check_data(Y, "Y")
+  Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
   alternative <- "greater"
