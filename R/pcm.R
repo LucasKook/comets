@@ -73,9 +73,9 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
                 args_VonXZ = list(mtry = identity),
                 args_RonZ = list(mtry = identity),
                 frac = 0.5, coin = FALSE, cointrol = NULL, ...) {
-  Y <- .check_data(Y, "Y")
-  X <- .check_data(X, "X")
-  Z <- .check_data(Z, "Z")
+  Y <- .check_data(Y, "Y", "pcm")
+  X <- .check_data(X, "X", "pcm")
+  Z <- .check_data(Z, "Z", "pcm")
   if (rep != 1) {
     pcms <- lapply(seq_len(rep), \(iter) {
       pcm(Y = Y, X = X, Z = Z, rep = 1, est_vhat = est_vhat,

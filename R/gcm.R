@@ -121,18 +121,18 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
   y - pred
 }
 
-.check_data <- function(x, mode = c("Y", "X", "Z")) {
+.check_data <- function(x, mode = c("Y", "X", "Z"), test = "gcm") {
   mode <- match.arg(mode)
   if (mode == "Y") {
+    N <- NROW(x)
     if (!is.matrix(x) & !is.data.frame(x)) {
-      N <- NROW(x)
       ret <- c(x)
       if (is.factor(ret) && length(levels(ret)) > 2)
         stop("Only binary factors are allowed for Y.")
-      if (N != NROW(ret))
-        stop("Please provide Y as a vector.")
       return(ret)
     } else {
+      if (NCOL(x) > 1 && test == "pcm")
+        stop("Please provide Y as a vector.")
       .check_data(x, mode = "X")
     }
   }
