@@ -3,7 +3,7 @@
 [![R-CMD-check](https://github.com/LucasKook/comets/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/LucasKook/comets/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-# Covariance measure tests
+# Covariance Measure Tests (COMETs) in R
 
 The Generalised \[1\] and Projected \[2\] Covariance Measure tests (GCM,
 PCM) can be used to test conditional independence between a real-valued
