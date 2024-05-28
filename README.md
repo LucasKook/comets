@@ -13,7 +13,8 @@ learning algorithms. The `comets` R package implements these covariance
 measure tests (COMETs) with a user-friendly interface which allows the
 user to use any sufficiently predictive supervised learning algorithm of
 their choosing. The default is to use random forests implemented in
-`ranger` for all regressions.
+`ranger` for all regressions. A Python version of this package is
+available [here](https://github.com/shimenghuang/pycomets).
 
 Here, we showcase how to use `comets` with a simple example in which *Y*
 is not independent of *X* given *Z*. More elaborate examples including
