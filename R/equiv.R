@@ -42,22 +42,17 @@ plm_equiv_test <- function(Y, X, Z, from, to, ...) {
   equiv_margin <- c(from, to) * stats::var(c(tst$rX))
   width <- diff(equiv_margin)
 
-  ### Function to compute the critical value for the equivalence test
-  cval <- \(s, level, w = width) {
-    stats::qchisq(p = level, df = 1, ncp = (s * w / 2)^2)
-  }
-
-  ### Compute p-value via root-finding
-  pval <- stats::uniroot(\(alp) cval(sqrt(n) / sqrt(vv), level = alp) - tt,
-                         interval = c(0, 1))$root
+  ### Compute non-centrality parameter and p-value
+  ncp <- (n / vv) * width^2 / 4
+  pval <- stats::pchisq(q = tt, df = tst$parameter, ncp = ncp)
 
   ### Output statistic (chi^2), critical value, p-value
   structure(list(
-    statistic = tt, p.value = pval, parameter = tst$parameter,
+    statistic = tt, p.value = pval, parameter = c(tst$parameter, "ncp" = ncp),
     hypothesis = c("E[cov(Y, X | Z)] / E[Var(X | Z)]" = paste0(
-      "in [", from, ", ", to, "]")),
+      "\n\tin [", from, ", ", to, "]")),
     null.value = c("E[cov(Y, X | Z)] / E[Var(X | Z)]" = paste0(
-      "in [", from, ", ", to, "]")),
+      "\n\tin [", from, ", ", to, "]")),
     alternative = "",
     method = paste0("Partially linear effect equivalence test"),
     data.name = deparse(match.call(), width.cutoff = 80),
