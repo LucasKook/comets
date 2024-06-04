@@ -4,7 +4,7 @@
 \alias{plm_equiv_test}
 \title{Equivalence test for the parameter in a partially linear model}
 \usage{
-plm_equiv_test(Y, X, Z, from, to, ...)
+plm_equiv_test(Y, X, Z, from, to, scale = c("plm", "cov", "cor"), ...)
 }
 \arguments{
 \item{Y}{Vector or matrix of response values.}
@@ -16,6 +16,12 @@ plm_equiv_test(Y, X, Z, from, to, ...)
 \item{from}{Lower bound of the equivalence margin}
 
 \item{to}{Upper bound of the equivalence margin}
+
+\item{scale}{Scale on which to specify the equivalence margin. Default
+\code{"plm"} corresponds to the partially linear model parameter
+described in the details. \code{"cov"} corresponds to the conditional
+covariance and \code{"cor"} to conditional correlation which lies in
+\eqn{[-1, 1]}.}
 
 \item{...}{Further arguments passed to \code{\link{gcm}}}
 }
@@ -32,7 +38,11 @@ the conditional covariance between Y and X given Z:
 \deqn{\theta = E[cov(X, Y | Z)] / E[Var(X | Z)].} The equivalence test (based
 on the GCM test) tests \eqn{H_0: \theta \not\in [{\tt from}, {\tt to}]} versus
 \eqn{H_1: \theta \in [{\tt from}, {\tt to}]}. Y, X (and theta) can only be
-one-dimensional. There are no restrictions on Z.
+one-dimensional. There are no restrictions on Z. The equivalence test can
+also be performed on the conditional covariance scale directly (using
+\code{scale = "cov"}) or on the conditional correlation scale:
+\deqn{E[cox(X, Y | Z)] / \sqrt{E[Var(X | Z)]E[Var(Y | Z)]}},
+using \code{scale = "cor"}.
 }
 \examples{
 n <- 150
