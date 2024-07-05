@@ -136,3 +136,15 @@ test_that("coin for tests", {
       distribution = "asymptotic"))
   })
 })
+
+test_that("equivalence test on different scales", {
+  n <- 150
+  X <- rnorm(n)
+  Z <- matrix(rnorm(2 * n), ncol = 2)
+  colnames(Z) <- c("Z1", "Z2")
+  Y <- X^2 + Z[, 2] + rnorm(n)
+  expect_no_error(plm_equiv_test(Y, X, Z, from = -1, to = 1))
+  expect_no_error(plm_equiv_test(Y, X, Z, from = -1, to = 1, scale = "cov"))
+  expect_no_error(plm_equiv_test(Y, X, Z, from = -1, to = 1, scale = "cor"))
+  expect_error(plm_equiv_test(Y, cbind(X, X), Z, from = -1, to = 1, scale = "cor"))
+})
