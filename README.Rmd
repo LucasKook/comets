@@ -13,7 +13,7 @@ library("comets")
 [![R-CMD-check](https://github.com/LucasKook/comets/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/LucasKook/comets/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
-# Covariance Measure Tests (COMETs) in R
+# Covariance Measure Tests (COMETs) in R <img src='inst/comets-pkg.png' align="right" height="138.5" />
 
 The Generalised [1] and Projected [2] Covariance Measure tests (GCM, PCM) can be
 used to test conditional independence between a real-valued response $Y$ and
