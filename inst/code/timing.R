@@ -43,8 +43,8 @@ pdat <- res |>
   pivot_longer(cols = c("GCM", "PCM"), names_to = "test", values_to = "time")
 
 ggplot(pdat, aes(x = n, y = time, color = test, group = interaction(n, test))) +
-  geom_boxplot(position = position_dodge(0)) +
-  facet_wrap(~ p, labeller = label_bquote(p==.(p)), nrow = 2) +
+  geom_boxplot(position = position_dodge(0), outlier.size = rel(0.1), size = rel(0.5)) +
+  facet_wrap(~ p, labeller = label_bquote(d==.(p)), nrow = 2) +
   labs(x = "sample size", y = "elapsed time (in seconds)", color = "COMET") +
   theme_bw() +
   scale_y_log10() +
