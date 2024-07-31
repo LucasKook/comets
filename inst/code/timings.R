@@ -5,6 +5,7 @@
 
 library("comets")
 library("tidyverse")
+save <- TRUE
 
 # Functions ---------------------------------------------------------------
 
@@ -17,8 +18,8 @@ dgp <- function(n = 50, p = 10) {
 
 # Parameters --------------------------------------------------------------
 
-niter <- 20
-ns <- 50 * 2^(0:6)
+niter <- 10
+ns <- 50 * 2^(0:8)
 ps <- 1 * 2^(0:5)
 
 # Run ---------------------------------------------------------------------
@@ -42,9 +43,21 @@ pdat <- res |>
   pivot_longer(cols = c("GCM", "PCM"), names_to = "test", values_to = "time")
 
 ggplot(pdat, aes(x = n, y = time, color = test, group = interaction(n, test))) +
-  geom_boxplot() +
-  facet_wrap(~ p, labeller = label_bquote(p==.(p))) +
+  geom_boxplot(position = position_dodge(0)) +
+  facet_wrap(~ p, labeller = label_bquote(p==.(p)), nrow = 2) +
   labs(x = "sample size", y = "elapsed time (in seconds)", color = "COMET") +
   theme_bw() +
   scale_y_log10() +
-  scale_x_log10()
+  scale_x_log10() +
+  theme(text = element_text(size = 13.5)) +
+  scale_color_brewer(palette = "Dark2")
+
+# Save --------------------------------------------------------------------
+
+if (save) {
+  if (!dir.exists("inst/results"))
+    dir.create("inst/results", recursive = TRUE)
+
+  write_csv(res, "inst/results/timings.csv")
+  ggsave("inst/figures/timings.pdf", height = 5, width = 8)
+}
