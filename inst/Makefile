@@ -15,7 +15,7 @@ ccle:
 	(cd .. && Rscript --vanilla inst/code/ccle.R > ccle.out)
 
 timing:
-	(cd .. && Rscript --vanilla inst/code/timing.R > ccle.out)
+	(cd .. && Rscript --vanilla inst/code/timing.R > timing.out)
 
 clean:
 	rm ../Rplots.pdf ../*.out *.out
