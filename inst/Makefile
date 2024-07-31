@@ -14,19 +14,10 @@ multiomics:
 ccle:
 	(cd .. && Rscript --vanilla inst/code/ccle.R > ccle.out)
 
-dep:
-	bash dispatch.sh run-install.sh 1200
-
-mim:
-	bash dispatch.sh run-mimic.sh 21600
-
-mul:
-	bash dispatch.sh run-multiomics.sh 3600
-
-sig:
-	bash dispatch.sh run-ccle.sh 3600
+timing:
+	(cd .. && Rscript --vanilla inst/code/timing.R > ccle.out)
 
 clean:
-	rm ../Rplots.pdf ../*.out
+	rm ../Rplots.pdf ../*.out *.out
 
 all: dependencies fig ccle multiomics mimic
