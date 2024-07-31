@@ -122,7 +122,10 @@ install.packages("comets")
 
 All results in \[3\] can be reproduced by running `make all` in `./inst`
 after downloading all required data from the [zenodo
-repository](https://zenodo.org/doi/10.5281/zenodo.10689553).
+repository](https://zenodo.org/doi/10.5281/zenodo.10689553). The scripts
+for reproducing the results manually can be found in `./inst/code/` for
+the CCLE data (`ccle.R`), TCGA data (`multiomics.R`) and MIMIC data
+(`mimic.R`).
 
 # References
 
