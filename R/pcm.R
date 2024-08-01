@@ -38,6 +38,12 @@
 #' @param args_VonXZ Arguments passed to \code{reg_VonXZ}.
 #' @param args_RonZ Arguments passed to \code{reg_RonZ}.
 #' @param frac Relative size of train split.
+#' @param indices A numeric vector of indices specifying the observations used
+#'     for estimating the estimating the direction (the other observations will
+#'     be used for computing the final test statistic). Default is \code{NULL}
+#'     and the indices will be generated randomly using \code{frac}.
+#'     When using \code{rep} larger than 1, a list (of length \code{rep}) of
+#'     indices can be supplied.
 #' @param ... Additional arguments currently ignored.
 #'
 #' @importFrom ranger ranger
@@ -72,11 +78,14 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
                 args_YhatonZ = list(mtry = identity),
                 args_VonXZ = list(mtry = identity),
                 args_RonZ = list(mtry = identity),
-                frac = 0.5, coin = FALSE, cointrol = NULL, ...) {
+                frac = 0.5, indices = NULL,
+                coin = FALSE, cointrol = NULL, ...) {
   Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X", "pcm")
   Z <- .check_data(Z, "Z", "pcm")
   if (rep != 1) {
+    if (!is.null(indices) && length(indices) != rep)
+      stop("Please supply a list of indices of length `rep`.")
     pcms <- lapply(seq_len(rep), \(iter) {
       pcm(Y = Y, X = X, Z = Z, rep = 1, est_vhat = est_vhat,
           reg_YonXZ = reg_YonXZ, reg_YonZ = reg_YonZ,
@@ -84,7 +93,8 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
           reg_RonZ = reg_RonZ, args_YonXZ = args_YonXZ,
           args_YonZ = args_YonZ, args_YhatonZ = args_YhatonZ,
           args_VonXZ = args_VonXZ, args_RonZ = args_RonZ,
-          ... = ...)
+          frac = frac, indices = indices[iter], coin = coin,
+          cointrol = cointrol, ... = ...)
     })
     stat <- mean(unlist(lapply(pcms, \(tst) tst$statistic)))
     pval <- pnorm(stat, lower.tail = FALSE)
@@ -93,7 +103,7 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
     }))
   } else {
     ### Sample splitting
-    dsp <- .split_sample(Y, X, Z, frac = frac)
+    dsp <- .split_sample(Y, X, Z, frac = frac, indices = indices)
     Ytr <- dsp$Ytr
     Xtr <- dsp$Xtr
     Ztr <- dsp$Ztr
@@ -144,7 +154,6 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
       pval <- pnorm(stat, lower.tail = FALSE)
     }
 
-
     dcheck <- data.frame(id = setdiff(seq_len(NROW(Y)), idx),
                          rY = rY, rT = rT, iter = 1)
   }
@@ -160,8 +169,10 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
 
 # Helpers -----------------------------------------------------------------
 
-.split_sample <- function(Y, X, Z, frac = 0.5) {
-  idx <- sample.int(NROW(Y), ceiling(frac * NROW(Y)))
+.split_sample <- function(Y, X, Z, frac = 0.5, indices = NULL) {
+  idx <- indices
+  if (is.null(idx))
+    idx <- sample.int(NROW(Y), ceiling(frac * NROW(Y)))
   ### Split 1
   Ytr <- Y[idx]
   Xtr <- as.matrix(data.frame(X)[idx, , drop = FALSE])

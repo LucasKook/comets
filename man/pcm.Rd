@@ -21,6 +21,7 @@ pcm(
   args_VonXZ = list(mtry = identity),
   args_RonZ = list(mtry = identity),
   frac = 0.5,
+  indices = NULL,
   coin = FALSE,
   cointrol = NULL,
   ...
@@ -73,10 +74,17 @@ See \code{?\link[comets]{regressions}} for more detail.}
 
 \item{frac}{Relative size of train split.}
 
+\item{indices}{A numeric vector of indices specifying the observations used
+for estimating the estimating the direction (the other observations will
+be used for computing the final test statistic). Default is \code{NULL}
+and the indices will be generated randomly using \code{frac}.
+When using \code{rep} larger than 1, a list (of length \code{rep}) of
+indices can be supplied.}
+
 \item{coin}{Logical; whether or not to use the \code{coin} package for
 computing the test statistic and p-value. The \code{coin} package
 computes variances with n - 1 degrees of freedom.
-The default is \code{FALSE}.}
+The default is \code{TRUE}.}
 
 \item{cointrol}{List; further arguments passed to
 \code{\link[coin]{independence_test}}.}
