@@ -49,7 +49,7 @@ ggplot(pdat, aes(x = n, y = time, color = test, group = interaction(n, test))) +
   theme_bw() +
   scale_y_log10() +
   scale_x_log10() +
-  theme(text = element_text(size = 13.5)) +
+  theme(text = element_text(size = 13.5), legend.position = "top") +
   scale_color_brewer(palette = "Dark2")
 
 # Save --------------------------------------------------------------------
@@ -59,5 +59,5 @@ if (save) {
     dir.create("inst/results", recursive = TRUE)
 
   write_csv(res, "inst/results/timings.csv")
-  ggsave("inst/figures/timings.pdf", height = 5, width = 8)
+  ggsave("inst/figures/timings.pdf", height = 5, width = 7.5, scale = 0.8)
 }
