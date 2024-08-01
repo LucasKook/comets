@@ -4,6 +4,7 @@
 \alias{rf}
 \alias{survforest}
 \alias{qrf}
+\alias{lrm}
 \alias{lasso}
 \alias{ridge}
 \alias{postlasso}
@@ -15,6 +16,8 @@ rf(y, x, ...)
 survforest(y, x, ...)
 
 qrf(y, x, ...)
+
+lrm(y, x, ...)
 
 lasso(y, x, ...)
 
@@ -47,7 +50,8 @@ for cross-validated ridge regression (using the one-standard error rule),
 hazards model as implemented in survival, \code{"qrf"} or \code{"survforest"}
 for quantile and survival random forests, respectively. The option
 \code{"postlasso"} option refers to a cross-validated LASSO (using the
-one-standard error rule) and subsequent OLS regression.
+one-standard error rule) and subsequent OLS regression. The \code{"lrm"}
+option implements a standard linear regression model.
 New regression methods can be implemented and supplied as well and need the
 following structure. The regression method \code{"custom_reg"} needs to take
 arguments \code{y, x, ...}, fit the model using \code{y} and \code{x} as

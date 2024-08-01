@@ -30,7 +30,7 @@
 #' @param coin Logical; whether or not to use the \code{coin} package for
 #'     computing the test statistic and p-value. The \code{coin} package
 #'     computes variances with n - 1 degrees of freedom.
-#'     The default is \code{FALSE}.
+#'     The default is \code{TRUE}.
 #' @param cointrol List; further arguments passed to
 #'     \code{\link[coin]{independence_test}}.
 #' @param ... Additional arguments passed to \code{reg_YonZ}.
@@ -61,7 +61,7 @@
 #'
 gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
                 reg_YonZ = "rf", reg_XonZ = "rf", args_XonZ = NULL,
-                type = c("quadratic", "max"), B = 499L, coin = FALSE,
+                type = c("quadratic", "max"), B = 499L, coin = TRUE,
                 cointrol = list(distribution = "asymptotic"), ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")

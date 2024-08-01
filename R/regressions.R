@@ -19,7 +19,8 @@
 #' hazards model as implemented in survival, \code{"qrf"} or \code{"survforest"}
 #' for quantile and survival random forests, respectively. The option
 #' \code{"postlasso"} option refers to a cross-validated LASSO (using the
-#' one-standard error rule) and subsequent OLS regression.
+#' one-standard error rule) and subsequent OLS regression. The \code{"lrm"}
+#' option implements a standard linear regression model.
 #' New regression methods can be implemented and supplied as well and need the
 #' following structure. The regression method \code{"custom_reg"} needs to take
 #' arguments \code{y, x, ...}, fit the model using \code{y} and \code{x} as
@@ -106,6 +107,25 @@ residuals.qrf <- \(object, data, ...) {
 }
 
 # Lasso/ridge -------------------------------------------------------------
+
+#' @rdname regressions
+lrm <- function(y, x, ...) {
+  obj <- stats::lm(y ~ x, ...)
+  class(obj) <- c("lrm", class(obj))
+  obj
+}
+
+#' @exportS3Method predict lrm
+predict.lrm <- function(object, data = NULL, ...) {
+  class(object) <- class(object)[-1]
+  c(cbind(1, as.matrix(data)) %*% object$coefficients)
+}
+
+#' @exportS3Method residuals lrm
+residuals.lrm <- function(object, response = NULL, data = NULL, ...) {
+  preds <- predict.lrm(object, data)
+  .compute_residuals(response, preds)
+}
 
 #' @importFrom glmnet cv.glmnet
 #' @rdname regressions

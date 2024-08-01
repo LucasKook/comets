@@ -50,7 +50,7 @@ used.}
 \item{coin}{Logical; whether or not to use the \code{coin} package for
 computing the test statistic and p-value. The \code{coin} package
 computes variances with n - 1 degrees of freedom.
-The default is \code{FALSE}.}
+The default is \code{TRUE}.}
 
 \item{cointrol}{List; further arguments passed to
 \code{\link[coin]{independence_test}}.}

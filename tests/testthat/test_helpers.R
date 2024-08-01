@@ -70,6 +70,7 @@ test_that("GCM with different regressions", {
     gcm3 <- gcm(Y, X, Z, reg_XonZ = "ridge", reg_YonZ = "ridge")
     gcm4 <- gcm(Y, X, Z, reg_XonZ = "qrf", reg_YonZ = "qrf")
     gcm5 <- gcm(Y, X, Z, reg_XonZ = "postlasso", reg_YonZ = "postlasso")
+    gcm6 <- gcm(Y, X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm")
   })
 })
 
@@ -87,6 +88,7 @@ test_that("PCM with different regressions", {
     pcm2 <- pcm(Y, X, Z, reg_YonXZ = "rf", reg_YonZ = "lasso")
     pcm3 <- pcm(Y, X, Z, reg_YonXZ = "ridge", reg_YonZ = "ridge")
     pcm4 <- pcm(Y, X, Z, reg_YonXZ = "postlasso", reg_YonZ = "postlasso")
+    pcm5 <- pcm(Y, X, Z, reg_YonXZ = "lrm", reg_YonZ = "lrm")
   })
 })
 
@@ -147,4 +149,15 @@ test_that("equivalence test on different scales", {
   expect_no_error(plm_equiv_test(Y, X, Z, from = -1, to = 1, scale = "cov"))
   expect_no_error(plm_equiv_test(Y, X, Z, from = -1, to = 1, scale = "cor"))
   expect_error(plm_equiv_test(Y, cbind(X, X), Z, from = -1, to = 1, scale = "cor"))
+})
+
+test_that("PCM works w/ and w/o replacement and fixed indices", {
+  n <- 150
+  X <- rnorm(n)
+  Z <- matrix(rnorm(2 * n), ncol = 2)
+  colnames(Z) <- c("Z1", "Z2")
+  Y <- X^2 + Z[, 2] + rnorm(n)
+  expect_no_error(t1 <- pcm(Y, X, Z, indices = 1:75))
+  expect_equal(t1$check.data$id, 76:n)
+  expect_error(pcm(Y, X, Z, indices = 1:75, rep = 2))
 })
