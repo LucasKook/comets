@@ -66,7 +66,8 @@ test_that("GCM with different regressions", {
     colnames(Z) <- c("Z1", "Z2")
     Y <- rnorm(tn)
     gcm1 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "lasso")
-    gcm2 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "rf")
+    gcm2 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "rf",
+                args_YonZ = list(mtry = 2))
     gcm3 <- gcm(Y, X, Z, reg_XonZ = "ridge", reg_YonZ = "ridge")
     gcm4 <- gcm(Y, X, Z, reg_XonZ = "qrf", reg_YonZ = "qrf")
     gcm5 <- gcm(Y, X, Z, reg_XonZ = "postlasso", reg_YonZ = "postlasso")
@@ -160,4 +161,25 @@ test_that("PCM works w/ and w/o replacement and fixed indices", {
   expect_no_error(t1 <- pcm(Y, X, Z, indices = 1:75))
   expect_equal(t1$check.data$id, 76:n)
   expect_error(pcm(Y, X, Z, indices = 1:75, rep = 2))
+})
+
+test_that("fitted models can be returned", {
+  expect_no_error({
+    set.seed(12)
+    tn <- 3e2
+    set.seed(12)
+    X <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(X) <- c("X1", "X2")
+    Z <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(Z) <- c("Z1", "Z2")
+    Y <- cbind(rowSums(X) + rnorm(tn), rowSums(X) + rnorm(tn))
+    gcm <- gcm(Y, X, Z, return_fitted_models = TRUE)
+    expect_length(tmp <- gcm$models[["reg_YonZ"]], NCOL(Y))
+    expect_s3_class(tmp[[1]], c("rf", "ranger"))
+    expect_length(gcm$models[["reg_XonZ"]], NCOL(X))
+    pcm <- pcm(Y[, 1], X, Z, return_fitted_models = TRUE)
+    expect_s3_class(pcm$models$reg_YonXZ, c("rf", "ranger"))
+    wgcm <- wgcm(Y[, 1], X, Z, return_fitted_models = TRUE)
+    expect_s3_class(wgcm$models[[1]], c("rf", "ranger"))
+  })
 })
