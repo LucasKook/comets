@@ -122,8 +122,9 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
 
 # Vis ---------------------------------------------------------------------
 
+#' @rdname plot.comet
 #' @exportS3Method plot wgcm
-plot.wgcm <- function(x, ...) {
+plot.wgcm <- function(x, plot = TRUE, ...) {
   .data <- NULL
   pd <- tidyr::pivot_longer(data.frame(rY = x$rY, rX = unname(x$rX * x$W)),
                             dplyr::starts_with("rX"))
@@ -135,7 +136,7 @@ plot.wgcm <- function(x, ...) {
       ggplot2::geom_smooth(method = "lm", se = FALSE, show.legend = FALSE) +
       ggplot2::theme_bw() +
       ggplot2::labs(x = "Weighted residuals X | Z", y = "Residuals Y | Z")
-    print(p1)
+    if (plot) print(p1)
   }
   return(invisible(p1))
 }

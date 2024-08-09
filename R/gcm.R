@@ -279,20 +279,35 @@ residuals.ranger <- function(object, newdata = NULL, newy = NULL, ...) {
 
 # Diagnostics -------------------------------------------------------------
 
+#' Plotting methods for COMETs
+#'
+#' @rdname plot.comet
+#'
+#' @param x Object of class '\code{gcm}', '\code{pcm}', or '\code{wgcm}'.
+#' @param plot Logical; whether to print the plot (default: \code{TRUE}).
+#' @param ... Currently ignored.
+#'
 #' @exportS3Method plot gcm
-plot.gcm <- function(x, ...) {
+plot.gcm <- function(x, plot = TRUE, ...) {
   .data <- NULL
-  pd <- tidyr::pivot_longer(data.frame(rY = x$rY, rX = unname(x$rX)),
-                            dplyr::starts_with("rX"))
+  pd <- tidyr::pivot_longer(data.frame(rY = unname(x$rY), rX = unname(x$rX)),
+                            dplyr::starts_with("rX"), names_to = "nX",
+                            values_to = "rX")
+  if (NCOL(x$rY > 1)) {
+    pd <- tidyr::pivot_longer(pd, dplyr::starts_with("rY"),
+                              names_to = "nY", values_to = "rY")
+  } else pd$nY <- "rY.1"
   if (requireNamespace("ggplot2")) {
-    p1 <- ggplot2::ggplot(pd, ggplot2::aes(x = .data[["value"]] ,
-                                           y = .data[["rY"]],
-                                           color = .data[["name"]])) +
+    p1 <- ggplot2::ggplot(pd, ggplot2::aes(
+      x = .data[["rX"]] , y = .data[["rY"]],
+      color = interaction(.data[["nY"]], .data[["nX"]]),
+      linetype = .data[["nY"]]
+    )) +
       ggplot2::geom_point(alpha = 0.3, show.legend = FALSE) +
       ggplot2::geom_smooth(method = "lm", se = FALSE, show.legend = FALSE) +
       ggplot2::theme_bw() +
       ggplot2::labs(x = "Residuals X | Z", y = "Residuals Y | Z")
-    print(p1)
+    if (plot) print(p1)
   }
   return(invisible(p1))
 }

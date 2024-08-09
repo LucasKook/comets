@@ -52,6 +52,7 @@ test_that("wGCM with different regressions", {
     wgcm2 <- wgcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "rf")
     wgcm3 <- wgcm(Y, X, Z, reg_XonZ = "ridge", reg_YonZ = "ridge")
     wgcm4 <- wgcm(Y, X, Z, reg_XonZ = "qrf", reg_YonZ = "qrf")
+    tmp <- plot(wgcm4, plot = FALSE)
   })
 })
 
@@ -72,6 +73,7 @@ test_that("GCM with different regressions", {
     gcm4 <- gcm(Y, X, Z, reg_XonZ = "qrf", reg_YonZ = "qrf")
     gcm5 <- gcm(Y, X, Z, reg_XonZ = "postlasso", reg_YonZ = "postlasso")
     gcm6 <- gcm(Y, X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm")
+    tmp <- plot(gcm6, plot = FALSE)
   })
 })
 
@@ -90,6 +92,7 @@ test_that("PCM with different regressions", {
     pcm3 <- pcm(Y, X, Z, reg_YonXZ = "ridge", reg_YonZ = "ridge")
     pcm4 <- pcm(Y, X, Z, reg_YonXZ = "postlasso", reg_YonZ = "postlasso")
     pcm5 <- pcm(Y, X, Z, reg_YonXZ = "lrm", reg_YonZ = "lrm")
+    tmp <- plot(pcm5, plot = FALSE)
   })
 })
 
@@ -103,6 +106,7 @@ test_that("Multi-dimensional GCM works", {
   colnames(Z) <- c("Z1", "Z2")
   Y <- cbind(rnorm(tn), rnorm(tn), rnorm(tn))
   expect_no_error(gcm1 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "lasso"))
+  tmp <- plot(gcm1, plot = FALSE)
   ### With multi-level factor as Y
   expect_no_error(comet(Species ~ Sepal.Length | Sepal.Width, data = iris))
   expect_error(comet(Species ~ Sepal.Length | Sepal.Width, data = iris, test = "pcm"))
