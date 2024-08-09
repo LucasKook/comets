@@ -197,8 +197,9 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
 
 # Diagnostics -------------------------------------------------------------
 
+#' @rdname plot.comet
 #' @exportS3Method plot pcm
-plot.pcm <- function(x, ...) {
+plot.pcm <- function(x, plot = TRUE, ...) {
   .data <- NULL
   test <- x$check.data
   if (requireNamespace("ggplot2") && requireNamespace("tidyr")) {
@@ -211,7 +212,7 @@ plot.pcm <- function(x, ...) {
     }
     p2 <- mpl("rT", "rY", test) +
       ggplot2::labs(x = "Residuals f(X, Z) | Z", y = "Residuals Y | Z")
-    print(p2)
+    if (plot) print(p2)
   }
   return(invisible(p2))
 }
