@@ -11,11 +11,13 @@ gcm(
   alternative = c("two.sided", "less", "greater"),
   reg_YonZ = "rf",
   reg_XonZ = "rf",
+  args_YonZ = NULL,
   args_XonZ = NULL,
   type = c("quadratic", "max"),
   B = 499L,
   coin = TRUE,
   cointrol = list(distribution = "asymptotic"),
+  return_fitted_models = FALSE,
   ...
 )
 }
@@ -37,7 +39,9 @@ Y on Z. See \code{?\link[comets]{regressions}} for more detail.}
 \item{reg_XonZ}{Character string or function specifying the regression for
 X on Z. See \code{?\link[comets]{regressions}} for more detail.}
 
-\item{args_XonZ}{Additional arguments passed to \code{reg_XonZ}.}
+\item{args_YonZ}{A list of named arguments passed to \code{reg_YonZ}.}
+
+\item{args_XonZ}{A list of named arguments passed to \code{reg_XonZ}.}
 
 \item{type}{Type of test statistic, either \code{"quadratic"} (default) or
 \code{"max"}. If \code{"max"} is specified, the p-value is computed
@@ -55,6 +59,9 @@ The default is \code{TRUE}.}
 \item{cointrol}{List; further arguments passed to
 \code{\link[coin]{independence_test}}.}
 
+\item{return_fitted_models}{Logical; whether to return the fitted regressions
+(default is \code{FALSE}).}
+
 \item{...}{Additional arguments passed to \code{reg_YonZ}.}
 }
 \value{
@@ -70,6 +77,7 @@ components:
 \item{\code{data.name}}{A character string giving the name(s) of the data.}
 \item{\code{rY}}{Residuals for the Y on Z regression.}
 \item{\code{rX}}{Residuals for the X on Z regression.}
+\item{\code{models}}{List of fitted regressions if \code{return_fitted_models} is \code{TRUE}.}
 }
 \description{
 Generalised covariance measure test

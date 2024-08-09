@@ -9,7 +9,7 @@
 #' generalised covariance measure. Journal of Machine Learning Research,
 #' 23(273), 1-68.
 #'
-#' @inherit gcm
+#' @inheritParams gcm
 #'
 #' @param Y Vector of response values. Can be supplied as a numeric vector or
 #'     a single column matrix.
@@ -32,6 +32,8 @@
 #' \item{\code{data.name}}{A character string giving the name(s) of the data.}
 #' \item{\code{rY}}{Residuals for the Y on Z regression.}
 #' \item{\code{rX}}{Weighted residuals for the X on Z regression.}
+#' \item{\code{W}}{Estimated weights.}
+#' \item{\code{models}}{List of fitted regressions if \code{return_fitted_models} is \code{TRUE}.}
 #'
 #' @export
 #'
@@ -46,7 +48,8 @@
 #'
 wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
                  args_XonZ = NULL, args_wfun = NULL, frac = 0.5,
-                 B = 499L, coin = FALSE, cointrol = NULL, ...) {
+                 B = 499L, coin = TRUE, cointrol = NULL,
+                 return_fitted_models = FALSE, ...) {
   Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
@@ -65,26 +68,27 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
   ### Estimate weight function and compute weights
   wYZ <- do.call(reg_YonZ, c(list(y = Ytr, x = Ztr), args))
   wrY <- stats::residuals(wYZ, response = Ytr, data = Ztr)
-  wrX <- apply(as.data.frame(Xtr), 2, \(tX) {
-    mX <- do.call(reg_XonZ, c(list(y = tX, x = Ztr), args_XonZ))
-    stats::residuals(mX, response = tX, data = Ztr)
-  })
+
+  wXZ <- .multi_regression(Xtr, Ztr, reg_XonZ, args_XonZ, return_fitted_models)
+  wrX <- wXZ[["residuals"]]
+  wmX <- wXZ[["models"]]
+
   RP <- c(wrY) * wrX
-  W <- apply(as.data.frame(RP), 2, \(tRP) {
+  mW <- apply(as.data.frame(RP), 2, \(tRP) {
     mZ <- do.call(reg_wfun, c(list(y = tRP, x = Ztr), args_wfun))
-    sign(predict(mZ, data = Zte))
   })
+  W <- do.call("cbind", lapply(mW, \(mZ) sign(predict(mZ, data = Zte))))
 
   ### GCM on test data with weights
   YZ <- do.call(reg_YonZ, c(list(y = Yte, x = Zte), args))
   rY <- stats::residuals(YZ, response = Yte, data = Zte)
-  rX <- apply(as.data.frame(Xte), 2, \(tX) {
-    mX <- do.call(reg_XonZ, c(list(y = tX, x = Zte), args_XonZ))
-    stats::residuals(mX, response = tX, data = Zte)
-  })
+  XZ <- .multi_regression(Xte, Zte, reg_XonZ, args_XonZ, return_fitted_models)
+  rX <- XZ[["residuals"]]
+  mX <- XZ[["models"]]
+
   if (coin) {
     tst <- do.call("independence_test", c(list(
-      rY ~ rX, alternative = "greater", teststat = "max",
+      rY ~ I(rX * W), alternative = "greater", teststat = "max",
       distribution = coin::approximate(B))))
     df <- NCOL(rY) * NCOL(rX)
     stat <- coin::statistic(tst)
@@ -101,13 +105,18 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
   par <- NULL
   names(stat) <- tname
 
+  models <- if (return_fitted_models) {
+    list(reg_YonZ_weight = wYZ, reg_XonZ_weight = wmX, reg_wfun = mW,
+         reg_YonZ_test = YZ, reg_XonZ_test = mX)
+  } else NULL
+
   structure(list(
     statistic = stat, p.value = pval, parameter = par,
     hypothesis = c("E[w(Z) cov(Y, X | Z)]" = "0"),
     null.value = c("E[w(Z) cov(Y, X | Z)]" = "0"), alternative = alternative,
     method = paste0("Weighted generalized covariance measure test"),
     data.name = deparse(match.call(), width.cutoff = 80),
-    rY = rY, rX = rX * W), class = c("wgcm", "htest"))
+    rY = rY, rX = rX, W = W, models = models), class = c("wgcm", "htest"))
 
 }
 
@@ -116,7 +125,7 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
 #' @exportS3Method plot wgcm
 plot.wgcm <- function(x, ...) {
   .data <- NULL
-  pd <- tidyr::pivot_longer(data.frame(rY = x$rY, rX = unname(x$rX)),
+  pd <- tidyr::pivot_longer(data.frame(rY = x$rY, rX = unname(x$rX * x$W)),
                             dplyr::starts_with("rX"))
   if (requireNamespace("ggplot2")) {
     p1 <- ggplot2::ggplot(pd, ggplot2::aes(x = .data[["value"]] ,

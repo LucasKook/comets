@@ -20,7 +20,8 @@
 #'     Y on Z. See \code{?\link[comets]{regressions}} for more detail.
 #' @param reg_XonZ Character string or function specifying the regression for
 #'     X on Z. See \code{?\link[comets]{regressions}} for more detail.
-#' @param args_XonZ Additional arguments passed to \code{reg_XonZ}.
+#' @param args_YonZ A list of named arguments passed to \code{reg_YonZ}.
+#' @param args_XonZ A list of named arguments passed to \code{reg_XonZ}.
 #' @param type Type of test statistic, either \code{"quadratic"} (default) or
 #'     \code{"max"}. If \code{"max"} is specified, the p-value is computed
 #'     based on a bootstrap approximation of the null distribution with
@@ -34,6 +35,8 @@
 #' @param cointrol List; further arguments passed to
 #'     \code{\link[coin]{independence_test}}.
 #' @param ... Additional arguments passed to \code{reg_YonZ}.
+#' @param return_fitted_models Logical; whether to return the fitted regressions
+#'     (default is \code{FALSE}).
 #'
 #' @returns Object of class '\code{gcm}' and '\code{htest}' with the following
 #' components:
@@ -47,6 +50,7 @@
 #' \item{\code{data.name}}{A character string giving the name(s) of the data.}
 #' \item{\code{rY}}{Residuals for the Y on Z regression.}
 #' \item{\code{rX}}{Residuals for the X on Z regression.}
+#' \item{\code{models}}{List of fitted regressions if \code{return_fitted_models} is \code{TRUE}.}
 #'
 #' @export
 #'
@@ -60,28 +64,29 @@
 #' (gcm1 <- gcm(Y, X, Z))
 #'
 gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
-                reg_YonZ = "rf", reg_XonZ = "rf", args_XonZ = NULL,
-                type = c("quadratic", "max"), B = 499L, coin = TRUE,
-                cointrol = list(distribution = "asymptotic"), ...) {
+                reg_YonZ = "rf", reg_XonZ = "rf", args_YonZ = NULL,
+                args_XonZ = NULL, type = c("quadratic", "max"), B = 499L,
+                coin = TRUE, cointrol = list(distribution = "asymptotic"),
+                return_fitted_models = FALSE, ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
   alternative <- match.arg(alternative)
   type <- match.arg(type)
   args <- if (length(list(...)) > 0) list(...) else NULL
+  args <- c(args_YonZ, args)
   if ("matrix" %in% class(Y)) {
-    rY <- apply(Y, 2, \(tY) {
-      mY <- do.call(reg_YonZ, c(list(y = tY, x = Z), args))
-      stats::residuals(mY, response = tY, data = Z)
-    })
+    YZ <- .multi_regression(Y, Z, reg_YonZ, args, return_fitted_models)
+    rY <- YZ[["residuals"]]
+    mY <- YZ[["models"]]
   } else {
-    YZ <- do.call(reg_YonZ, c(list(y = Y, x = Z), args))
-    rY <- stats::residuals(YZ, response = Y, data = Z)
+    mY <- do.call(reg_YonZ, c(list(y = Y, x = Z), args))
+    rY <- stats::residuals(mY, response = Y, data = Z)
   }
-  rX <- apply(X, 2, \(tX) {
-    mX <- do.call(reg_XonZ, c(list(y = tX, x = Z), args_XonZ))
-    stats::residuals(mX, response = tX, data = Z)
-  })
+  XZ <- .multi_regression(X, Z, reg_XonZ, args_XonZ, return_fitted_models)
+  rX <- XZ[["residuals"]]
+  mX <- XZ[["models"]]
+
   if (coin | NCOL(rY) > 1) {
     tst <- do.call("independence_test", c(list(
       rY ~ rX, alternative = alternative, teststat = type), cointrol))
@@ -103,17 +108,37 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
   }
   names(stat) <- tname
 
+  models <- if (return_fitted_models) {
+    list(reg_YonZ = mY, reg_XonZ = mX)
+  } else NULL
+
   structure(list(
     statistic = stat, p.value = pval, parameter = par,
     hypothesis = c("E[cov(Y, X | Z)]" = "0"),
     null.value = c("E[cov(Y, X | Z)]" = "0"), alternative = alternative,
     method = paste0("Generalized covariance measure test"),
     data.name = deparse(match.call(), width.cutoff = 80),
-    rY = rY, rX = rX), class = c("gcm", "htest"))
+    rY = rY, rX = rX, models = models), class = c("gcm", "htest"))
 
 }
 
 # Helpers -----------------------------------------------------------------
+
+.multi_regression <- function(Y, X, reg, args, rfm) {
+  res <- apply(Y, 2, \(tY) {
+    m <- do.call(reg, c(list(y = tY, x = X), args))
+    r <- stats::residuals(m, response = tY, data = X)
+    if (rfm) list(m = m, r = r) else r
+  }, simplify = FALSE)
+  if (rfm) {
+    r <- do.call("cbind", lapply(res, \(x) x[["r"]]))
+    m <- lapply(res, \(x) x[["m"]])
+  } else {
+    r <- do.call("cbind", res)
+    m <- NULL
+  }
+  return(list(models = m, residuals = r))
+}
 
 .compute_residuals <- function(y, pred) {
   if (is.factor(y) && length(levels(y)) == 2)

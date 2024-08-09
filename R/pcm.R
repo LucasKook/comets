@@ -32,11 +32,11 @@
 #'     for the estimated transformation of Y, X, and Z on Z, default is
 #'     \code{"rf"} for random forest.
 #'     See \code{?\link[comets]{regressions}} for more detail.
-#' @param args_YonXZ Arguments passed to \code{reg_YonXZ}.
-#' @param args_YonZ Arguments passed to \code{reg_YonZ}.
-#' @param args_YhatonZ Arguments passed to \code{reg_YhatonZ}.
-#' @param args_VonXZ Arguments passed to \code{reg_VonXZ}.
-#' @param args_RonZ Arguments passed to \code{reg_RonZ}.
+#' @param args_YonXZ A list of named arguments passed to \code{reg_YonXZ}.
+#' @param args_YonZ A list of named arguments passed to \code{reg_YonZ}.
+#' @param args_YhatonZ A list of named arguments passed to \code{reg_YhatonZ}.
+#' @param args_VonXZ A list of named arguments passed to \code{reg_VonXZ}.
+#' @param args_RonZ A list of named arguments passed to \code{reg_RonZ}.
 #' @param frac Relative size of train split.
 #' @param indices A numeric vector of indices specifying the observations used
 #'     for estimating the estimating the direction (the other observations will
@@ -44,6 +44,8 @@
 #'     and the indices will be generated randomly using \code{frac}.
 #'     When using \code{rep} larger than 1, a list (of length \code{rep}) of
 #'     indices can be supplied.
+#' @param return_fitted_models Logical; whether to return the fitted regressions
+#'     (default is \code{FALSE}).
 #' @param ... Additional arguments currently ignored.
 #'
 #' @importFrom ranger ranger
@@ -60,6 +62,7 @@
 #' \item{\code{method}}{The string \code{"Projected covariance measure test"}.}
 #' \item{\code{data.name}}{A character string giving the name(s) of the data.}
 #' \item{\code{check.data}}{A \code{data.frame} containing the residuals for plotting.}
+#' \item{\code{models}}{List of fitted regressions if \code{return_fitted_models} is \code{TRUE}.}
 #'
 #' @export
 #'
@@ -79,7 +82,9 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
                 args_VonXZ = list(mtry = identity),
                 args_RonZ = list(mtry = identity),
                 frac = 0.5, indices = NULL,
-                coin = FALSE, cointrol = NULL, ...) {
+                coin = FALSE, cointrol = NULL,
+                return_fitted_models = FALSE,
+                ...) {
   Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X", "pcm")
   Z <- .check_data(Z, "Z", "pcm")
@@ -94,7 +99,8 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
           args_YonZ = args_YonZ, args_YhatonZ = args_YhatonZ,
           args_VonXZ = args_VonXZ, args_RonZ = args_RonZ,
           frac = frac, indices = indices[iter], coin = coin,
-          cointrol = cointrol, ... = ...)
+          cointrol = cointrol, return_fitted_models = return_fitted_models,
+          ... = ...)
     })
     stat <- mean(unlist(lapply(pcms, \(tst) tst$statistic)))
     pval <- pnorm(stat, lower.tail = FALSE)
@@ -158,13 +164,18 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
                          rY = rY, rT = rT, iter = 1)
   }
 
+  models <- if (return_fitted_models) {
+    list(reg_YonXZ = ghat, reg_YhatonZ = mtilde, reg_VonXZ = vtilde,
+         reg_RonZ = mhatfhat, reg_YonZ = mhat)
+  } else NULL
+
   structure(list(
     statistic = c("Z" = stat), p.value = pval,
     hypothesis = c("E[Y | X, Z]" = "E[Y | Z]"),
     null.value = c("E[Y | X, Z]" = "E[Y | Z]"), alternative = "two.sided",
     method = paste0("Projected covariance measure test"),
     data.name = deparse(match.call(), width.cutoff = 80),
-    check.data = dcheck, rep = rep), class = c("pcm", "htest"))
+    check.data = dcheck, rep = rep, models = models), class = c("pcm", "htest"))
 }
 
 # Helpers -----------------------------------------------------------------
