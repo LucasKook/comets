@@ -1,4 +1,3 @@
-
 #' Equivalence test for the parameter in a partially linear model
 #'
 #' @details
@@ -11,7 +10,7 @@
 #' one-dimensional. There are no restrictions on Z. The equivalence test can
 #' also be performed on the conditional covariance scale directly (using
 #' \code{scale = "cov"}) or on the conditional correlation scale:
-#' \deqn{E[cox(X, Y | Z)] / \sqrt{E[Var(X | Z)]E[Var(Y | Z)]}},
+#' \deqn{E[cov(X, Y | Z)] / \sqrt{E[Var(X | Z)]E[Var(Y | Z)]}},
 #' using \code{scale = "cor"}.
 #'
 #' @inheritParams gcm
@@ -46,12 +45,11 @@ plm_equiv_test <- function(Y, X, Z, from, to,
   n <- NROW(tst$rY)
   ts <- mean(tst$rY * tst$rX)
   vv <- stats::var(tst$rY * tst$rX)
-  scale_factor <- switch(
-    scale,
+  scale_factor <- switch(scale,
     "plm" = c(stats::var(tst$rX)),
     "cov" = 1,
     "cor" = stats::sd(tst$rY) * c(stats::sd(tst$rX))
-    )
+  )
   t0 <- (from + to) / 2 * scale_factor
   tt <- c("X-squared" = n * (ts - t0)^2 / vv)
 
@@ -64,8 +62,7 @@ plm_equiv_test <- function(Y, X, Z, from, to,
   pval <- stats::pchisq(q = tt, df = tst$parameter, ncp = ncp)
 
   ### Output statistic (chi^2), critical value, p-value
-  hyp <- switch(
-    scale,
+  hyp <- switch(scale,
     "plm" = "partial linear effect", # "E[cov(Y, X | Z)] / E[Var(X | Z)]",
     "cov" = "conditional covariance", # "E[cov(Y, X | Z)]",
     "cor" = "conditional correlation" # "E[cov(Y, X | Z)] / sqrt(E[Var(X | Z)] E[Var(Y | Z)])",
@@ -77,5 +74,6 @@ plm_equiv_test <- function(Y, X, Z, from, to,
     hypothesis = mar, null.value = mar, alternative = "",
     method = paste0("Partial linear effect equivalence test"),
     data.name = deparse(match.call(), width.cutoff = 80),
-    rY = tst$rY, rX = tst$rX), class = c("gcm", "htest"))
+    rY = tst$rY, rX = tst$rX
+  ), class = c("gcm", "htest"))
 }
