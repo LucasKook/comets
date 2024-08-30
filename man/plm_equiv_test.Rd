@@ -41,7 +41,7 @@ on the GCM test) tests \eqn{H_0: \theta \not\in [{\tt from}, {\tt to}]} versus
 one-dimensional. There are no restrictions on Z. The equivalence test can
 also be performed on the conditional covariance scale directly (using
 \code{scale = "cov"}) or on the conditional correlation scale:
-\deqn{E[cox(X, Y | Z)] / \sqrt{E[Var(X | Z)]E[Var(Y | Z)]}},
+\deqn{E[cov(X, Y | Z)] / \sqrt{E[Var(X | Z)]E[Var(Y | Z)]}},
 using \code{scale = "cor"}.
 }
 \examples{
