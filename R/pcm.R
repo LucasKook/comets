@@ -135,8 +135,10 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
       chat <- if (a(0) < 1) 0 else stats::uniroot(\(c) a(c) - 1, c(0, 10), extendInt = "yes")$root
       vhat <- \(X, Z) pmax(predict(vtilde, data = cbind(X, Z)), 0) + chat
     }
-    else
+    else {
+      vtilde <- NULL
       vhat <- \(X, Z) 1
+    }
 
     ### Obtain residuals for test
     fhat <- \(X, Z) hhat(X, Z) / vhat(X, Z)
