@@ -75,32 +75,31 @@
 #' Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 #' (pcm1 <- pcm(Y, X, Z))
 #'
-pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
-                reg_YonZ = "rf", reg_YhatonZ = "rf", reg_VonXZ = "rf",
-                reg_RonZ = "rf", args_YonXZ = NULL, args_YonZ = NULL,
-                args_YhatonZ = list(mtry = identity),
-                args_VonXZ = list(mtry = identity),
-                args_RonZ = list(mtry = identity),
-                frac = 0.5, indices = NULL,
-                coin = FALSE, cointrol = NULL,
-                return_fitted_models = FALSE,
-                ...) {
+pcm <- function(
+    Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
+    reg_YonZ = "rf", reg_YhatonZ = "rf", reg_VonXZ = "rf",
+    reg_RonZ = "rf", args_YonXZ = NULL, args_YonZ = NULL,
+    args_YhatonZ = list(mtry = identity),
+    args_VonXZ = list(mtry = identity),
+    args_RonZ = list(mtry = identity),
+    frac = 0.5, indices = NULL,
+    coin = FALSE, cointrol = NULL,
+    return_fitted_models = FALSE,
+    ...
+) {
+  call <- match.call()
+  ### Data checks
   Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X", "pcm")
   Z <- .check_data(Z, "Z", "pcm")
+  ### Multiple splits
   if (rep != 1) {
     if (!is.null(indices) && length(indices) != rep)
       stop("Please supply a list of indices of length `rep`.")
     pcms <- lapply(seq_len(rep), \(iter) {
-      pcm(Y = Y, X = X, Z = Z, rep = 1, est_vhat = est_vhat,
-          reg_YonXZ = reg_YonXZ, reg_YonZ = reg_YonZ,
-          reg_YhatonZ = reg_YhatonZ, reg_VonXZ = reg_VonXZ,
-          reg_RonZ = reg_RonZ, args_YonXZ = args_YonXZ,
-          args_YonZ = args_YonZ, args_YhatonZ = args_YhatonZ,
-          args_VonXZ = args_VonXZ, args_RonZ = args_RonZ,
-          frac = frac, indices = indices[iter], coin = coin,
-          cointrol = cointrol, return_fitted_models = return_fitted_models,
-          ... = ...)
+      call$rep <- 1
+      call$indices <- indices[iter]
+      eval(call)
     })
     stat <- mean(unlist(lapply(pcms, \(tst) tst$statistic)))
     pval <- pnorm(stat, lower.tail = FALSE)
