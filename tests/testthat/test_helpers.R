@@ -187,3 +187,22 @@ test_that("fitted models can be returned", {
     expect_s3_class(wgcm$models[[1]], c("rf", "ranger"))
   })
 })
+
+test_that("comet", {
+  set.seed(42)
+  data("mtcars")
+  expect_no_error({
+    comet(mpg ~ cyl | disp, data = mtcars)
+    comet(cbind(mpg, cyl) ~ vs + mpg | disp, data = mtcars)
+    comet(factor(vs) ~ cyl | disp, data = mtcars)
+    comet(mpg ~ cyl | disp, data = mtcars, test = "pcm")
+    comet(factor(vs) ~ cyl | disp, data = mtcars, test = "pcm")
+    comet(mpg ~ cyl | disp, data = mtcars, test = "wgcm")
+    comet(factor(vs) ~ cyl | disp, data = mtcars, test = "wgcm")
+  })
+  expect_error({
+    comet(factor(mpg) ~ cyl | disp, data = mtcars)
+    comet(factor(mpg) ~ cyl | disp, data = mtcars, test = "pcm")
+    comet(factor(mpg) ~ cyl | disp, data = mtcars, test = "wgcm")
+  })
+})
