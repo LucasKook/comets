@@ -10,7 +10,7 @@ Description: Covariance measure tests for conditional independence testing
     (Shah and Peters, 2020, <doi:10.1214/19-aos1857>) and projected covariance 
     measure test (Lundborg et al., 2023, <doi:10.48550/arXiv.2211.02039>). 
     Applications can be found in 
-    Kook and Lundborg (2024, <doi:10.48550/arXiv.2402.14416>).
+    Kook and Lundborg (2024, <doi:10.1093/bib/bbae475>).
 Imports: ranger, glmnet, Formula, survival, coin
 License: GPL-3
 Encoding: UTF-8
