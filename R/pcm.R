@@ -166,9 +166,11 @@ pcm <- function(Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
                          rY = rY, rT = rT, iter = 1)
   }
 
-  models <- if (return_fitted_models) {
+  models <- if (return_fitted_models && rep == 1) {
     list(reg_YonXZ = ghat, reg_YhatonZ = mtilde, reg_VonXZ = vtilde,
          reg_RonZ = mhatfhat, reg_YonZ = mhat)
+  } else if (return_fitted_models && rep > 1){
+    lapply(pcms, \(x) x[["models"]])
   } else NULL
 
   structure(list(
