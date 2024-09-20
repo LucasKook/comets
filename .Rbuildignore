@@ -3,5 +3,5 @@
 ^\.github$
 ^inst$
 ^README.md
-^tests/testthat/test_helpers.R
+^tests/
 ^README.Rmd

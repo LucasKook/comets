@@ -28,9 +28,10 @@ Formula-based interface for the generalised and projected covariance measure
 tests.
 }
 \examples{
-tn <- 3e2
+tn <- 1e2
 df <- data.frame(y = rnorm(tn), x1 = rnorm(tn), x2 = rnorm(tn), z = rnorm(tn))
 comet(y ~ x1 + x2 | z, data = df, test = "gcm")
+
 }
 \references{
 Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance testing in

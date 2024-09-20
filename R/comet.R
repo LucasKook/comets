@@ -17,12 +17,13 @@
 #'
 #' @return Object of class \code{"gcm"}, \code{"wgcm"} or \code{"pcm"} and
 #'     \code{"htest"}. See \code{\link{gcm}} and \code{\link{pcm}} for details.
-#' @export
 #'
 #' @examples
-#' tn <- 3e2
+#' tn <- 1e2
 #' df <- data.frame(y = rnorm(tn), x1 = rnorm(tn), x2 = rnorm(tn), z = rnorm(tn))
 #' comet(y ~ x1 + x2 | z, data = df, test = "gcm")
+#'
+#' @export
 comet <- function(formula, data, test = c("gcm", "pcm", "wgcm"), ...) {
   fm <- Formula::as.Formula(formula)
   Y <- stats::model.response(model.frame(fm, data))
