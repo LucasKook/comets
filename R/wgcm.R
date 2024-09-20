@@ -38,7 +38,7 @@
 #' @export
 #'
 #' @examples
-#' n <- 150
+#' n <- 100
 #' X <- matrix(rnorm(2 * n), ncol = 2)
 #' colnames(X) <- c("X1", "X2")
 #' Z <- matrix(rnorm(2 * n), ncol = 2)

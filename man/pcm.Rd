@@ -117,7 +117,7 @@ The projected covariance measure test tests whether the conditional
 mean of Y given X and Z is independent of X.
 }
 \examples{
-n <- 150
+n <- 1e2
 X <- matrix(rnorm(2 * n), ncol = 2)
 colnames(X) <- c("X1", "X2")
 Z <- matrix(rnorm(2 * n), ncol = 2)
