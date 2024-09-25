@@ -63,11 +63,13 @@
 #' Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 #' (gcm1 <- gcm(Y, X, Z))
 #'
-gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
-                reg_YonZ = "rf", reg_XonZ = "rf", args_YonZ = NULL,
-                args_XonZ = NULL, type = c("quadratic", "max"), B = 499L,
-                coin = TRUE, cointrol = list(distribution = "asymptotic"),
-                return_fitted_models = FALSE, ...) {
+gcm <- function(
+    Y, X, Z, alternative = c("two.sided", "less", "greater"),
+    reg_YonZ = "rf", reg_XonZ = "rf", args_YonZ = NULL,
+    args_XonZ = NULL, type = c("quadratic", "max", "scalar"), B = 499L,
+    coin = TRUE, cointrol = list(distribution = "asymptotic"),
+    return_fitted_models = FALSE, ...
+) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
@@ -104,6 +106,9 @@ gcm <- function(Y, X, Z, alternative = c("two.sided", "less", "greater"),
   par <- c("df" = df)
   if (type == "max") {
     tname <- "|Z|"
+    par <- NULL
+  } else if (type == "scalar") {
+    tname <- "Z"
     par <- NULL
   }
   names(stat) <- tname

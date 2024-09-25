@@ -141,6 +141,12 @@ test_that("coin for tests", {
       distribution = approximate(99)))
     gcm(Y, X, Z, type = "quadratic", coin = TRUE, cointrol = list(
       distribution = "asymptotic"))
+    gcm(Y, X, Z, type = "max", coin = TRUE, cointrol = list(
+      distribution = "asymptotic"), alternative = "less")
+    gcm(Y, X, Z, type = "max", coin = TRUE, cointrol = list(
+      distribution = "asymptotic"), alternative = "greater")
+    gcm(Y[, 1], X[, 1], Z, type = "scalar", coin = TRUE, cointrol = list(
+      distribution = "asymptotic"))
   })
 })
 
