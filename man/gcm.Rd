@@ -13,7 +13,7 @@ gcm(
   reg_XonZ = "rf",
   args_YonZ = NULL,
   args_XonZ = NULL,
-  type = c("quadratic", "max"),
+  type = c("quadratic", "max", "scalar"),
   B = 499L,
   coin = TRUE,
   cointrol = list(distribution = "asymptotic"),
