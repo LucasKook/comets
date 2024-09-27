@@ -41,7 +41,7 @@ investigated by calling `plot(GCM)` (not shown here).
     ##  Generalized covariance measure test
     ## 
     ## data:  gcm(Y = Y, X = X, Z = Z)
-    ## X-squared = 2.8211, df = 2, p-value = 0.244
+    ## X-squared = 3.6131, df = 2, p-value = 0.1642
     ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 
 The PCM test can be run likewise.
@@ -74,7 +74,7 @@ comet(Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
     ##  Generalized covariance measure test
     ## 
     ## data:  test(Y = Y, X = X, Z = Z)
-    ## X-squared = 3.2184, df = 2, p-value = 0.2
+    ## X-squared = 3.5, df = 2, p-value = 0.1738
     ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 
 Different regression methods can supplied for both GCM and PCM tests
@@ -134,11 +134,12 @@ independence testing and the generalised covariance measure,” The Annals
 of Statistics, 48(3), 1514-1538.
 [doi:10.1214/19-aos1857](https://doi.org/10.1214/19-aos1857)
 
-\[2\] Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2022).
+\[2\] Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2024).
 The Projected Covariance Measure for assumption-lean variable
-significance testing. arXiv preprint.
+significance testing. The Annals of Statistics. To appear.
 [doi:10.48550/arXiv.2211.02039](https://doi.org/10.48550/arXiv.2211.02039)
 
 \[3\] Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance
-testing in supervised learning with multimodal data. arXiv preprint.
-[doi:10.48550/arXiv.2402.14416](https://doi.org/10.48550/arXiv.2402.14416)
+testing in supervised learning with multimodal data. Briefings in
+Bioinformatics 25(6) 2024.
+[doi:10.1093/bib/bbae475](https://doi.org/10.1093/bib/bbae475)
