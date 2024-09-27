@@ -35,6 +35,6 @@ comet(y ~ x1 + x2 | z, data = df, test = "gcm")
 }
 \references{
 Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance testing in
-supervised learning with multimodal data. arXiv preprint.
-\doi{10.48550/arXiv.2402.14416}
+supervised learning with multimodal data. Briefings in Bioinformatics,
+25(6), 2024. \doi{10.1093/bib/bbae475}
 }

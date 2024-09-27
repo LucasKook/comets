@@ -6,8 +6,8 @@
 #'
 #' @references
 #' Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance testing in
-#' supervised learning with multimodal data. arXiv preprint.
-#' \doi{10.48550/arXiv.2402.14416}
+#' supervised learning with multimodal data. Briefings in Bioinformatics,
+#' 25(6), 2024. \doi{10.1093/bib/bbae475}
 #'
 #' @param formula Formula of the form \code{Y ~ X | Z} for testing Y independent
 #'     of X given Z.
@@ -27,8 +27,9 @@
 comet <- function(formula, data, test = c("gcm", "pcm", "wgcm"), ...) {
   fm <- Formula::as.Formula(formula)
   Y <- stats::model.response(model.frame(fm, data))
-  if (is.factor(Y) && length(levels(Y)) > 2)
-    Y <- .rm_int(stats::model.matrix(~ Y))
+  if (is.factor(Y) && length(levels(Y)) > 2) {
+    Y <- .rm_int(stats::model.matrix(~Y))
+  }
   X <- .rm_int(stats::model.matrix(fm, data, rhs = 1))
   Z <- .rm_int(stats::model.matrix(fm, data, rhs = 2))
   test <- match.fun(match.arg(test))
