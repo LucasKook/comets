@@ -99,6 +99,9 @@ pcm <- function(
     pcms <- lapply(seq_len(rep), \(iter) {
       call$rep <- 1
       call$indices <- indices[iter]
+      call$Y <- Y
+      call$X <- X
+      call$Z <- Z
       eval(call)
     })
     stat <- mean(unlist(lapply(pcms, \(tst) tst$statistic)))
