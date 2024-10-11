@@ -212,3 +212,17 @@ test_that("comet", {
     comet(factor(mpg) ~ cyl | disp, data = mtcars, test = "wgcm")
   })
 })
+
+test_that("residual gcm", {
+  set.seed(42)
+  expect_no_error({
+    rY <- rnorm(100)
+    rX <- rnorm(100)
+    rX2 <- rnorm(100)
+    rgcm(rY, rX, type = "quadratic")
+    rgcm(rY, rX, type = "max")
+    rgcm(rY, rX, type = "scalar")
+    rgcm(rY, cbind(rX, rX2), type = "quadratic")
+    rgcm(cbind(rY, rX2), rX, type = "max")
+  })
+})
