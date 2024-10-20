@@ -101,7 +101,7 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
     pval <- tst$pval
   }
 
-  tname <- ifelse(df == 1, "Z", "|Z|")
+  tname <- ifelse(df == 1, "Z", "maxT")
   par <- NULL
   names(stat) <- tname
 

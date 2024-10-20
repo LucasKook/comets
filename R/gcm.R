@@ -106,7 +106,7 @@ gcm <- function(
   tname <- "X-squared"
   par <- c("df" = df)
   if (type == "max") {
-    tname <- "|Z|"
+    tname <- "maxT"
     par <- NULL
   } else if (type == "scalar") {
     tname <- "Z"
