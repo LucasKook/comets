@@ -88,36 +88,44 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
 
   if (coin) {
     tst <- do.call("independence_test", c(list(
-      rY ~ I(rX * W), alternative = "greater", teststat = "max",
-      distribution = coin::approximate(B))))
+      rY ~ I(rX * W),
+      alternative = "greater", teststat = "max",
+      distribution = coin::approximate(B)
+    )))
     df <- NCOL(rY) * NCOL(rX)
     stat <- coin::statistic(tst)
     pval <- coin::pvalue(tst)
   } else {
-    tst <- .gcm(rY, as.matrix(rX * W), alternative = "greater",
-                type = "max", B = B)
+    tst <- .gcm(rY, as.matrix(rX * W),
+      alternative = "greater",
+      type = "max", B = B
+    )
     df <- tst$df
     stat <- tst$stat
     pval <- tst$pval
   }
 
-  tname <- ifelse(df == 1, "Z", "|Z|")
+  tname <- ifelse(df == 1, "Z", "maxT")
   par <- NULL
   names(stat) <- tname
 
   models <- if (return_fitted_models) {
-    list(reg_YonZ_weight = wYZ, reg_XonZ_weight = wmX, reg_wfun = mW,
-         reg_YonZ_test = YZ, reg_XonZ_test = mX)
-  } else NULL
+    list(
+      reg_YonZ_weight = wYZ, reg_XonZ_weight = wmX, reg_wfun = mW,
+      reg_YonZ_test = YZ, reg_XonZ_test = mX
+    )
+  } else {
+    NULL
+  }
 
   structure(list(
     statistic = stat, p.value = pval, parameter = par,
     hypothesis = c("E[w(Z) cov(Y, X | Z)]" = "0"),
     null.value = c("E[w(Z) cov(Y, X | Z)]" = "0"), alternative = alternative,
     method = paste0("Weighted generalized covariance measure test"),
-    data.name = deparse(match.call(), width.cutoff = 80),
-    rY = rY, rX = rX, W = W, models = models), class = c("wgcm", "htest"))
-
+    data.name = paste0(deparse(match.call()), collapse = "\n"),
+    rY = rY, rX = rX, W = W, models = models
+  ), class = c("wgcm", "htest"))
 }
 
 # Vis ---------------------------------------------------------------------
@@ -126,12 +134,16 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
 #' @exportS3Method plot wgcm
 plot.wgcm <- function(x, plot = TRUE, ...) {
   .data <- NULL
-  pd <- tidyr::pivot_longer(data.frame(rY = x$rY, rX = unname(x$rX * x$W)),
-                            dplyr::starts_with("rX"))
+  pd <- tidyr::pivot_longer(
+    data.frame(rY = x$rY, rX = unname(x$rX * x$W)),
+    dplyr::starts_with("rX")
+  )
   if (requireNamespace("ggplot2")) {
-    p1 <- ggplot2::ggplot(pd, ggplot2::aes(x = .data[["value"]] ,
-                                           y = .data[["rY"]],
-                                           color = .data[["name"]])) +
+    p1 <- ggplot2::ggplot(pd, ggplot2::aes(
+      x = .data[["value"]],
+      y = .data[["rY"]],
+      color = .data[["name"]]
+    )) +
       ggplot2::geom_point(alpha = 0.3, show.legend = FALSE) +
       ggplot2::geom_smooth(method = "lm", se = FALSE, show.legend = FALSE) +
       ggplot2::theme_bw() +

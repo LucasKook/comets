@@ -106,7 +106,7 @@ gcm <- function(
   tname <- "X-squared"
   par <- c("df" = df)
   if (type == "max") {
-    tname <- "|Z|"
+    tname <- "maxT"
     par <- NULL
   } else if (type == "scalar") {
     tname <- "Z"
@@ -406,7 +406,7 @@ rgcm <- function(
     hypothesis = c("E[cov(Y, X | Z)]" = "0"),
     null.value = c("E[cov(Y, X | Z)]" = "0"), alternative = alternative,
     method = paste0("Generalized covariance measure test"),
-    data.name = deparse(match.call(), width.cutoff = 80),
+    data.name = paste0(deparse(match.call()), collapse = "\n"),
     rY = rY, rX = rX
   ), class = c("gcm", "htest"))
 }
