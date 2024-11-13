@@ -85,8 +85,7 @@ pcm <- function(
     frac = 0.5, indices = NULL,
     coin = FALSE, cointrol = NULL,
     return_fitted_models = FALSE,
-    ...
-) {
+    ...) {
   call <- match.call()
   ### Data checks
   Y <- .check_data(Y, "Y", "pcm")
@@ -94,8 +93,9 @@ pcm <- function(
   Z <- .check_data(Z, "Z", "pcm")
   ### Multiple splits
   if (rep != 1) {
-    if (!is.null(indices) && length(indices) != rep)
+    if (!is.null(indices) && length(indices) != rep) {
       stop("Please supply a list of indices of length `rep`.")
+    }
     pcms <- lapply(seq_len(rep), \(iter) {
       call$rep <- 1
       call$indices <- indices[iter]
@@ -126,7 +126,7 @@ pcm <- function(
     mtilde <- do.call(reg_YhatonZ, c(list(x = Ztr, y = pghat), args_YhatonZ))
     htilde <- \(X, Z) predict(ghat, data = cbind(X, Z)) - predict(mtilde, data = Z)
     rho <- mean(stats::residuals(mtilde, response = Ytr, data = Ztr) *
-                  predict(ghat, data = cbind(Xtr, Ztr)))
+      predict(ghat, data = cbind(Xtr, Ztr)))
     hhat <- \(X, Z) sign(rho) * htilde(X, Z)
 
     ### Obtain hat{v}
@@ -136,8 +136,7 @@ pcm <- function(
       a <- function(c) mean(sqr / (pmax(predict(vtilde, data = cbind(Xtr, Ztr)), 0) + c))
       chat <- if (a(0) < 1) 0 else stats::uniroot(\(c) a(c) - 1, c(0, 10), extendInt = "yes")$root
       vhat <- \(X, Z) pmax(predict(vtilde, data = cbind(X, Z)), 0) + chat
-    }
-    else {
+    } else {
       vtilde <- NULL
       vhat <- \(X, Z) 1
     }
@@ -154,7 +153,9 @@ pcm <- function(
 
     if (coin) {
       tst <- do.call("independence_test", c(list(
-        rY ~ rT, alternative = "greater", teststat = "scalar"), cointrol))
+        rY ~ rT,
+        alternative = "greater", teststat = "scalar"
+      ), cointrol))
       stat <- coin::statistic(tst)
       pval <- coin::pvalue(tst)
     } else {
@@ -164,32 +165,40 @@ pcm <- function(
       pval <- pnorm(stat, lower.tail = FALSE)
     }
 
-    dcheck <- data.frame(id = setdiff(seq_len(NROW(Y)), idx),
-                         rY = rY, rT = rT, iter = 1)
+    dcheck <- data.frame(
+      id = setdiff(seq_len(NROW(Y)), idx),
+      rY = rY, rT = rT, iter = 1
+    )
   }
 
   models <- if (return_fitted_models && rep == 1) {
-    list(reg_YonXZ = ghat, reg_YhatonZ = mtilde, reg_VonXZ = vtilde,
-         reg_RonZ = mhatfhat, reg_YonZ = mhat)
-  } else if (return_fitted_models && rep > 1){
+    list(
+      reg_YonXZ = ghat, reg_YhatonZ = mtilde, reg_VonXZ = vtilde,
+      reg_RonZ = mhatfhat, reg_YonZ = mhat
+    )
+  } else if (return_fitted_models && rep > 1) {
     lapply(pcms, \(x) x[["models"]])
-  } else NULL
+  } else {
+    NULL
+  }
 
   structure(list(
     statistic = c("Z" = stat), p.value = pval,
     hypothesis = c("E[Y | X, Z]" = "E[Y | Z]"),
     null.value = c("E[Y | X, Z]" = "E[Y | Z]"), alternative = "two.sided",
     method = paste0("Projected covariance measure test"),
-    data.name = deparse(match.call(), width.cutoff = 80),
-    check.data = dcheck, rep = rep, models = models), class = c("pcm", "htest"))
+    data.name = paste0(deparse(match.call()), collapse = "\n"),
+    check.data = dcheck, rep = rep, models = models
+  ), class = c("pcm", "htest"))
 }
 
 # Helpers -----------------------------------------------------------------
 
 .split_sample <- function(Y, X, Z, frac = 0.5, indices = NULL) {
   idx <- indices
-  if (is.null(idx))
+  if (is.null(idx)) {
     idx <- sample.int(NROW(Y), ceiling(frac * NROW(Y)))
+  }
   ### Split 1
   Ytr <- Y[idx]
   Xtr <- as.matrix(data.frame(X)[idx, , drop = FALSE])
@@ -210,8 +219,10 @@ plot.pcm <- function(x, plot = TRUE, ...) {
   test <- x$check.data
   if (requireNamespace("ggplot2") && requireNamespace("tidyr")) {
     mpl <- \(xx, yy, pdat, ...) {
-      ggplot2::ggplot(pdat, ggplot2::aes(y = .data[[yy]], x = .data[[xx]],
-                                         color = factor(.data[["iter"]]))) +
+      ggplot2::ggplot(pdat, ggplot2::aes(
+        y = .data[[yy]], x = .data[[xx]],
+        color = factor(.data[["iter"]])
+      )) +
         ggplot2::geom_point(alpha = 0.3, show.legend = FALSE) +
         ggplot2::geom_smooth(se = FALSE, method = "lm", show.legend = FALSE) +
         ggplot2::theme_bw()
