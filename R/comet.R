@@ -32,8 +32,11 @@ comet <- function(formula, data, test = c("gcm", "pcm", "wgcm"), ...) {
   }
   X <- .rm_int(stats::model.matrix(fm, data, rhs = 1))
   Z <- .rm_int(stats::model.matrix(fm, data, rhs = 2))
-  test <- match.fun(match.arg(test))
-  tst <- test(Y = Y, X = X, Z = Z, ...)
+  tst <- do.call(match.arg(test), c(list(Y = Y, X = X, Z = Z), list(...)))
   tst$data.name <- paste0(deparse(match.call()), collapse = "\n")
   tst
 }
+
+#' @rdname comet
+#' @export
+comets <- comet

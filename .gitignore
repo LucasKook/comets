@@ -12,4 +12,4 @@ mimic
 *.bib
 *.rds
 *.sh
-
+Makefile

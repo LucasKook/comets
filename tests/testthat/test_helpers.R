@@ -1,12 +1,13 @@
-
 test_that(".ranger works", {
   set.seed(12)
   tn <- 3e2
-  dat <- data.frame(bin = factor(sample(0:1, tn, TRUE)),
-                    ord = ordered(sample(7:10, tn, TRUE)),
-                    mcc = factor(sample(11:15, tn, TRUE)),
-                    num = rnorm(tn),
-                    x = rnorm(tn))
+  dat <- data.frame(
+    bin = factor(sample(0:1, tn, TRUE)),
+    ord = ordered(sample(7:10, tn, TRUE)),
+    mcc = factor(sample(11:15, tn, TRUE)),
+    num = rnorm(tn),
+    x = rnorm(tn)
+  )
   lapply(colnames(dat)[-ncol(dat)], \(resp) {
     fm <- reformulate("x", resp)
     rf <- .ranger(fm, data = dat)
@@ -67,8 +68,10 @@ test_that("GCM with different regressions", {
     colnames(Z) <- c("Z1", "Z2")
     Y <- rnorm(tn)
     gcm1 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "lasso")
-    gcm2 <- gcm(Y, X, Z, reg_XonZ = "lasso", reg_YonZ = "rf",
-                args_YonZ = list(mtry = 2))
+    gcm2 <- gcm(Y, X, Z,
+      reg_XonZ = "lasso", reg_YonZ = "rf",
+      args_YonZ = list(mtry = 2)
+    )
     gcm3 <- gcm(Y, X, Z, reg_XonZ = "ridge", reg_YonZ = "ridge")
     gcm4 <- gcm(Y, X, Z, reg_XonZ = "qrf", reg_YonZ = "qrf")
     gcm5 <- gcm(Y, X, Z, reg_XonZ = "postlasso", reg_YonZ = "postlasso")
@@ -122,8 +125,10 @@ test_that("TRAM GCM works with coxph and survforest", {
   z <- model.matrix(~ 0 + age, data = GBSG2)
   expect_no_error(tgcm <- gcm(y, x, z, reg_YonZ = "cox"))
   expect_no_error(tgcm <- gcm(y, x, z, reg_YonZ = "survforest"))
-  expect_no_error(comet(Surv(time, cens) ~ horTh | age, data = GBSG2,
-                        reg_YonZ = "cox"))
+  expect_no_error(comet(Surv(time, cens) ~ horTh | age,
+    data = GBSG2,
+    reg_YonZ = "cox"
+  ))
 })
 
 test_that("coin for tests", {
@@ -138,15 +143,20 @@ test_that("coin for tests", {
     colnames(Z) <- c("Z1", "Z2")
     Y <- cbind(rowSums(X) + rnorm(tn), rowSums(X) + rnorm(tn))
     gcm(Y, X, Z, type = "max", coin = TRUE, cointrol = list(
-      distribution = approximate(99)))
+      distribution = approximate(99)
+    ))
     gcm(Y, X, Z, type = "quadratic", coin = TRUE, cointrol = list(
-      distribution = "asymptotic"))
+      distribution = "asymptotic"
+    ))
     gcm(Y, X, Z, type = "max", coin = TRUE, cointrol = list(
-      distribution = "asymptotic"), alternative = "less")
+      distribution = "asymptotic"
+    ), alternative = "less")
     gcm(Y, X, Z, type = "max", coin = TRUE, cointrol = list(
-      distribution = "asymptotic"), alternative = "greater")
+      distribution = "asymptotic"
+    ), alternative = "greater")
     gcm(Y[, 1], X[, 1], Z, type = "scalar", coin = TRUE, cointrol = list(
-      distribution = "asymptotic"))
+      distribution = "asymptotic"
+    ))
   })
 })
 
@@ -224,5 +234,25 @@ test_that("residual gcm", {
     rgcm(rY, rX, type = "scalar")
     rgcm(rY, cbind(rX, rX2), type = "quadratic")
     rgcm(cbind(rY, rX2), rX, type = "max")
+  })
+})
+
+test_that("glm regressions work", {
+  m <- glrm(rnorm(10), rnorm(10))
+  expect_length(residuals(m, response = rnorm(5), data = rnorm(5)), 5)
+  expect_no_error({
+    comet(Sepal.Width ~ Sepal.Length | Species,
+      data = iris, reg_YonZ = "glrm",
+      args_YonZ = list(family = "quasipoisson"),
+      reg_XonZ = "glrm", args_XonZ = list(family = "Gamma")
+    )
+  })
+  expect_no_error({
+    comet(Sepal.Width ~ Sepal.Length | Species,
+      test = "pcm",
+      data = iris, reg_YonXZ = "glrm",
+      args_YonXZ = list(family = "quasipoisson"),
+      reg_YonZ = "glrm", args_YonZ = list(family = "Gamma")
+    )
   })
 })
