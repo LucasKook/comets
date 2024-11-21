@@ -5,6 +5,7 @@
 \alias{survforest}
 \alias{qrf}
 \alias{lrm}
+\alias{glrm}
 \alias{lasso}
 \alias{ridge}
 \alias{postlasso}
@@ -18,6 +19,8 @@ survforest(y, x, ...)
 qrf(y, x, ...)
 
 lrm(y, x, ...)
+
+glrm(y, x, ...)
 
 lasso(y, x, ...)
 

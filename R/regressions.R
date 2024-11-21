@@ -1,6 +1,3 @@
-
-# Random forest -----------------------------------------------------------
-
 #' Implemented regression methods
 #' @rdname regressions
 #' @param y Vector (or matrix) of response values.
@@ -46,8 +43,9 @@ rf <- function(y, x, ...) {
 predict.rf <- function(object, data = NULL, ...) {
   class(object) <- class(object)[-1]
   preds <- predict(object, data = data)$predictions
-  if (object$treetype == "Probability estimation")
+  if (object$treetype == "Probability estimation") {
     preds <- preds[, 2]
+  }
   preds
 }
 
@@ -127,6 +125,28 @@ residuals.lrm <- function(object, response = NULL, data = NULL, ...) {
   .compute_residuals(response, preds)
 }
 
+#' @rdname regressions
+#' @importFrom stats glm
+glrm <- function(y, x, ...) {
+  dat <- list(y = y, x = x)
+  obj <- stats::glm(y ~ x, data = dat, ...)
+  class(obj) <- c("glrm", class(obj))
+  obj
+}
+
+#' @exportS3Method predict glrm
+predict.glrm <- function(object, data = NULL, ...) {
+  class(object) <- class(object)[-1]
+  predict(object, newdata = list(x = data), ...)
+}
+
+#' @exportS3Method residuals glrm
+#' @importFrom stats residuals
+residuals.glrm <- function(object, response = NULL, data = NULL, ...) {
+  preds <- predict(object, data = data, type = "response")
+  .compute_residuals(response, preds)
+}
+
 #' @importFrom glmnet cv.glmnet
 #' @rdname regressions
 lasso <- function(y, x, ...) {
@@ -158,8 +178,11 @@ ridge <- function(y, x, ...) {
 postlasso <- function(y, x, ...) {
   obj <- cv.glmnet(y = y, x = as.matrix(x), ...)
   nz <- which(stats::coef(obj, s = "lambda.1se")[-1] != 0)
-  obj <- if (!identical(nz, integer(0))) stats::lm(y ~ x[, nz]) else
+  obj <- if (!identical(nz, integer(0))) {
+    stats::lm(y ~ x[, nz])
+  } else {
     stats::lm(y ~ 1)
+  }
   obj$nz <- nz
   class(obj) <- c("postlasso", class(obj))
   obj

@@ -73,7 +73,7 @@ plm_equiv_test <- function(Y, X, Z, from, to,
     statistic = tt, p.value = pval, parameter = c(tst$parameter, "ncp" = ncp),
     hypothesis = mar, null.value = mar, alternative = "",
     method = paste0("Partial linear effect equivalence test"),
-    data.name = deparse(match.call(), width.cutoff = 80),
+    data.name = paste0(deparse(match.call(), width.cutoff = 80), collapse = "\n"),
     rY = tst$rY, rX = tst$rX
   ), class = c("gcm", "htest"))
 }

@@ -380,7 +380,7 @@ plot.gcm <- function(x, plot = TRUE, ...) {
 #' \item{\code{data.name}}{A character string giving the name(s) of the data.}
 #' \item{\code{rY}}{Residuals for the Y on Z regression.}
 #' \item{\code{rX}}{Residuals for the X on Z regression.}
-#'
+#' @export
 rgcm <- function(
     rY, rX, alternative = "two.sided",
     type = c("quadratic", "max", "scalar"), ...) {
