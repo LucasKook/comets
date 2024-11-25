@@ -197,10 +197,12 @@ test_that("comet", {
     comet(factor(vs) ~ cyl | disp, data = mtcars, test = "pcm")
     comet(mpg ~ cyl | disp, data = mtcars, test = "wgcm")
     comet(factor(vs) ~ cyl | disp, data = mtcars, test = "wgcm")
+    comet(factor(mpg) ~ cyl | disp, data = mtcars)
   })
   expect_error({
-    comet(factor(mpg) ~ cyl | disp, data = mtcars)
     comet(factor(mpg) ~ cyl | disp, data = mtcars, test = "pcm")
+  })
+  expect_error({
     comet(factor(mpg) ~ cyl | disp, data = mtcars, test = "wgcm")
   })
 })

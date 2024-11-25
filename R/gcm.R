@@ -154,7 +154,7 @@ gcm <- function(
     N <- NROW(x)
     if (!is.matrix(x) & !is.data.frame(x)) {
       ret <- c(x)
-      if (is.factor(ret) && length(levels(ret)) > 2) {
+      if (is.factor(ret) && length(levels(ret)) > 2 && test == "pcm") {
         stop("Only binary factors are allowed for Y.")
       }
       return(ret)
