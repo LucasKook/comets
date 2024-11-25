@@ -26,9 +26,11 @@
 #' @export
 comet <- function(formula, data, test = c("gcm", "pcm", "wgcm"), ...) {
   fm <- Formula::as.Formula(formula)
-  Y <- stats::model.response(model.frame(fm, data))
+  Y <- stats::model.response(stats::model.frame(fm, data))
   if (is.factor(Y) && length(levels(Y)) > 2) {
-    Y <- .rm_int(stats::model.matrix(~Y))
+    Y <- stats::model.matrix(~ 0 + Y,
+      contrasts.arg = list("Y" = "contr.treatment")
+    )[, -1]
   }
   X <- .rm_int(stats::model.matrix(fm, data, rhs = 1))
   Z <- .rm_int(stats::model.matrix(fm, data, rhs = 2))

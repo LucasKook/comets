@@ -1,21 +1,3 @@
-test_that(".ranger works", {
-  set.seed(12)
-  tn <- 3e2
-  dat <- data.frame(
-    bin = factor(sample(0:1, tn, TRUE)),
-    ord = ordered(sample(7:10, tn, TRUE)),
-    mcc = factor(sample(11:15, tn, TRUE)),
-    num = rnorm(tn),
-    x = rnorm(tn)
-  )
-  lapply(colnames(dat)[-ncol(dat)], \(resp) {
-    fm <- reformulate("x", resp)
-    rf <- .ranger(fm, data = dat)
-    rr <- residuals.ranger(rf)
-    expect_lt(abs(mean(rr)), 0.05)
-  })
-})
-
 test_that("gcm pcm data types", {
   expect_no_error({
     set.seed(12)
@@ -254,5 +236,28 @@ test_that("glm regressions work", {
       args_YonXZ = list(family = "quasipoisson"),
       reg_YonZ = "glrm", args_YonZ = list(family = "Gamma")
     )
+  })
+})
+
+test_that("rf works with different response types", {
+  set.seed(12)
+  tn <- 3e2
+  dat <- data.frame(
+    bin = factor(sample(0:1, tn, TRUE)),
+    ord = ordered(sample(7:10, tn, TRUE)),
+    mcc = factor(sample(11:15, tn, TRUE)),
+    num = rnorm(tn),
+    x = rnorm(tn)
+  )
+  lapply(colnames(dat)[-ncol(dat)], \(resp) {
+    rf <- rf(y = dat[[resp]], x = dat[, "x", drop = FALSE])
+    rr <- residuals.rf(rf,
+      data = dat[, "x", drop = FALSE],
+      response = dat[[resp]]
+    )
+    expect_true(all(colMeans(as.matrix(rr)) <= 0.05))
+  })
+  expect_no_error({
+    comet(mcc ~ bin | x, data = dat)
   })
 })

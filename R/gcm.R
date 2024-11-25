@@ -148,13 +148,6 @@ gcm <- function(
   return(list(models = m, residuals = r))
 }
 
-.compute_residuals <- function(y, pred) {
-  if (is.factor(y) && length(levels(y)) == 2) {
-    y <- as.numeric(y) - 1
-  }
-  y - pred
-}
-
 .check_data <- function(x, mode = c("Y", "X", "Z"), test = "gcm") {
   mode <- match.arg(mode)
   if (mode == "Y") {
@@ -250,64 +243,6 @@ gcm <- function(
     all = tms, me = me, ie = ie, response = resp, terms = atms,
     fml = formula
   )
-}
-
-# Ranger ------------------------------------------------------------------
-
-#' @importFrom stats model.response model.frame
-.ranger <- function(formula, data, ...) {
-  response <- stats::model.response(stats::model.frame(formula, data))
-  is_factor <- is.factor(response)
-  tms <- .get_terms(formula)
-  resp <- if (is_factor) {
-    .rm_int(stats::model.matrix(~response, contrasts.arg = list(
-      "response" = "contr.treatment"
-    )))
-  } else {
-    response
-  }
-  tmp <- list(data = data, response = resp, is_factor = is_factor)
-  if (identical(tms$me, character(0))) {
-    if (is_factor) {
-      return(structure(c(list(mean = base::colMeans(resp)), tmp),
-        class = "ranger"
-      ))
-    } else {
-      return(structure(c(
-        list(mean = mean(as.numeric(response))),
-        tmp
-      ), class = "ranger"))
-    }
-  }
-  ret <- ranger::ranger(formula, data, probability = is_factor, ...)
-  structure(c(ret, tmp), class = "ranger")
-}
-
-#' @importFrom stats predict
-residuals.ranger <- function(object, newdata = NULL, newy = NULL, ...) {
-  if (is.null(newdata)) {
-    newdata <- object$data
-  }
-  if (!is.null(newy)) {
-    newy <- if (object$is_factor) {
-      .rm_int(stats::model.matrix(~newy, contrasts.arg = list(
-        "newy" = "contr.treatment"
-      )))
-    } else {
-      newy
-    }
-  }
-  if (is.null(newy)) {
-    newy <- object$response
-  }
-  if (!is.null(object$mean)) {
-    return(newy - object$mean)
-  }
-  preds <- stats::predict(object, data = newdata)$predictions
-  if (object$is_factor) {
-    preds <- preds[, -1]
-  }
-  unname(newy - preds)
 }
 
 # Diagnostics -------------------------------------------------------------
