@@ -186,7 +186,7 @@ test_that("fitted models can be returned", {
   })
 })
 
-test_that("comet", {
+test_that("comet wrapper works", {
   set.seed(42)
   data("mtcars")
   expect_no_error({
@@ -198,6 +198,8 @@ test_that("comet", {
     comet(mpg ~ cyl | disp, data = mtcars, test = "wgcm")
     comet(factor(vs) ~ cyl | disp, data = mtcars, test = "wgcm")
     comet(factor(mpg) ~ cyl | disp, data = mtcars)
+    comet(ordered(mpg) ~ cyl | disp, data = mtcars)
+    comet(cbind(mpg, vs) ~ cyl | disp, data = mtcars)
   })
   expect_error({
     comet(factor(mpg) ~ cyl | disp, data = mtcars, test = "pcm")
@@ -207,7 +209,7 @@ test_that("comet", {
   })
 })
 
-test_that("residual gcm", {
+test_that("residual gcm works", {
   set.seed(42)
   expect_no_error({
     rY <- rnorm(100)
