@@ -31,7 +31,9 @@
 rf <- function(y, x, ...) {
   args <- list(...)
   if (length(unique(y)) == 2) {
-    y <- as.factor(y)
+    y <- factor(y)
+  }
+  if (is.factor(y)) {
     args$probability <- TRUE
   }
   rf <- do.call("ranger", c(list(y = y, x = x), args))
@@ -44,7 +46,7 @@ predict.rf <- function(object, data = NULL, ...) {
   class(object) <- class(object)[-1]
   preds <- predict(object, data = data)$predictions
   if (object$treetype == "Probability estimation") {
-    preds <- preds[, 2]
+    preds <- preds[, -1]
   }
   preds
 }
@@ -52,7 +54,19 @@ predict.rf <- function(object, data = NULL, ...) {
 #' @exportS3Method residuals rf
 residuals.rf <- function(object, response = NULL, data = NULL, ...) {
   preds <- predict.rf(object, data, ...)
+  if (length(unique(response)) == 2) {
+    response <- factor(response)
+  }
   .compute_residuals(response, preds)
+}
+
+### Internal residuals function dealing with factors
+#' @importFrom stats model.matrix model.frame predict
+.compute_residuals <- function(y, pred) {
+  if (is.factor(y)) {
+    y <- stats::model.matrix(~ 0 + y, contrasts.arg = list("y" = "contr.treatment"))[, -1]
+  }
+  y - pred
 }
 
 ### Survival forest

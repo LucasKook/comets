@@ -79,6 +79,9 @@ nX <- "race"
 nC <- c("sex", "age")
 nZ <- paste0("V", 1:red)
 
+### To factor
+emb[, nY] <- factor(emb[, nY])
+
 ### Test function
 run_tests <- function(splits = 20, max_size = 1e4, verbose = FALSE) {
   pb <- txtProgressBar(min = 0, max = splits, style = 3)
