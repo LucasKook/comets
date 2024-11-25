@@ -64,7 +64,9 @@ residuals.rf <- function(object, response = NULL, data = NULL, ...) {
 #' @importFrom stats model.matrix model.frame predict
 .compute_residuals <- function(y, pred) {
   if (is.factor(y)) {
-    y <- stats::model.matrix(~ 0 + y, contrasts.arg = list("y" = "contr.treatment"))[, -1]
+    y <- stats::model.matrix(~ 0 + y,
+      contrasts.arg = list("y" = "contr.treatment")
+    )[, -1]
   }
   y - pred
 }
