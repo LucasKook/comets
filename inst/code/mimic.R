@@ -4,6 +4,8 @@
 set.seed(2410)
 nrep <- 5
 red <- 111 # 98% variance
+save <- TRUE
+run_full <- FALSE
 
 if (!dir.exists("inst/results")) {
   dir.create("inst/results")
@@ -96,54 +98,71 @@ run_tests <- function(splits = 20, max_size = 1e4, verbose = FALSE) {
     nemb <- emb[idx, ]
 
     ### Test resp _||_ race | emb, age, sex ### GCM/PCM
-    gcm1 <- gcm(nemb[, nY], .mm(nX, nemb), .mm(c(nZ, nC), nemb), coin = FALSE)
+    gcm1 <- gcm(nemb[, nY], .mm(nX, nemb), .mm(c(nZ, nC), nemb))
     if (verbose) cat("\nGCM1 done")
-    pcm1 <- pcm(nemb[, nY], .mm(nX, nemb), .mm(c(nZ, nC), nemb), rep = nrep, coin = FALSE)
+    pcm1 <- pcm(nemb[, nY], .mm(nX, nemb), .mm(c(nZ, nC), nemb), rep = nrep)
     if (verbose) cat("\nPCM1 done")
     ### Test resp _||_ emb | race, age, sex ### GCM/PCM
-    gcm2 <- gcm(nemb[, nY], .mm(nZ, nemb), .mm(c(nX, nC), nemb), coin = FALSE)
+    gcm2 <- gcm(nemb[, nY], .mm(nZ, nemb), .mm(c(nX, nC), nemb))
     if (verbose) cat("\nGCM2 done")
-    pcm2 <- pcm(nemb[, nY], .mm(nZ, nemb), .mm(c(nX, nC), nemb), rep = nrep, coin = FALSE)
+    pcm2 <- pcm(nemb[, nY], .mm(nZ, nemb), .mm(c(nX, nC), nemb), rep = nrep)
     if (verbose) cat("\nPCM2 done")
     ### Return
     list(GCM1 = gcm1, PCM1 = pcm1, GCM2 = gcm2, PCM2 = pcm2)
   })
 }
 
-### RUN on full data
-print(full <- run_tests(1, nrow(emb), verbose = TRUE))
-pvals <- c(
-  "GCM1" = -log10(full[[1]]$GCM1$p.value),
-  "PCM1" = -log10(full[[1]]$PCM1$p.value),
-  "GCM2" = -pchisq(unname(full[[1]]$GCM2$statistic),
-    log.p = TRUE,
-    df = red, lower.tail = FALSE
-  ) / log(10),
-  "PCM2" = -pnorm(unname(full[[1]]$PCM2$statistic),
-    log.p = TRUE,
-    lower.tail = FALSE
-  ) / log(10)
-)
-cat("Negative log10 p-values\n")
-print(pvals)
-saveRDS(full, "inst/results/mimic-full.rds")
+### FUNs
+gcm_stat_to_pval <- function(stat, df) {
+  -pchisq(unname(stat), log.p = TRUE, df = df, lower.tail = FALSE) / log(10)
+}
+
+pcm_stat_to_pval <- function(stat) {
+  -pnorm(unname(stat), log.p = TRUE, lower.tail = FALSE) / log(10)
+}
+
+if (run_full) {
+  ### RUN on full data
+  print(full <- run_tests(1, nrow(emb), verbose = TRUE))
+  pvals <- c(
+    "GCM1" = gcm_stat_to_pval(full[[1]]$GCM1$statistic, full[[1]]$GCM1$parameter),
+    "PCM1" = pcm_stat_to_pval(full[[1]]$PCM1$p.value),
+    "GCM2" = gcm_stat_to_pval(full[[1]]$GCM2$statistic, full[[1]]$GCM2$parameter),
+    "PCM2" = pcm_stat_to_pval(unname(full[[1]]$PCM2$statistic))
+  )
+  cat("Negative log10 p-values\n")
+  print(pvals)
+  saveRDS(full, "inst/results/mimic-full.rds")
+}
 
 ### RUN with splits
 ms <- 150 * 4^(0:2)
 nsplit <- 75
 out <- dplyr::bind_rows(lapply(ms, \(nmax) {
   res <- run_tests(splits = nsplit, max_size = nmax)
-  dplyr::bind_rows(lapply(res, \(x) unlist(lapply(x, \(y) y$p.value)))) |>
+  dplyr::bind_rows(lapply(res, \(x) {
+    c(
+      "GCM1" = gcm_stat_to_pval(x$GCM1$statistic, x$GCM1$parameter),
+      "PCM1" = pcm_stat_to_pval(x$PCM1$statistic),
+      "GCM2" = gcm_stat_to_pval(x$GCM2$statistic, x$GCM2$parameter),
+      "PCM2" = pcm_stat_to_pval(x$PCM2$statistic)
+    )
+  })) |>
     dplyr::mutate(n = nmax)
 }))
 
+if (save) {
+  readr::write_csv(out, "inst/results/mimic-pvals.csv")
+}
+
+### Plot
 out |>
   tidyr::pivot_longer(-n) |>
   dplyr::mutate(hypothesis = dplyr::case_when(
     name %in% c("GCM1", "PCM1") ~ "PE~'_||_'~race~'|'~x*'-'*ray*','*~sex*','*~age",
     name %in% c("GCM2", "PCM2") ~ "PE~'_||_'~x*'-'*ray~'|'~race*','*~sex*','*~age"
   )) |>
-  ggplot(aes(x = ordered(n), color = stringr::str_remove(name, "[0-9]"), y = -log10(value))) +
+  ggplot(aes(x = ordered(n), color = stringr::str_remove(name, "[0-9]"), y = value)) +
   geom_violin(width = 0.5, position = position_dodge(width = 0.5)) +
   geom_boxplot(width = 0.3, position = position_dodge(width = 0.5), outlier.shape = NA) +
   ggbeeswarm::geom_quasirandom(width = 0.1, dodge.width = 0.5, alpha = 0.3, size = 0.5) +
@@ -154,5 +173,6 @@ out |>
   scale_color_brewer(palette = "Dark2") +
   theme(legend.position = "top")
 
-readr::write_csv(out, "inst/results/mimic-pvals.csv")
-ggsave("inst/figures/mimic-pval.pdf", height = 3.5, width = 6, scale = 0.85)
+if (save) {
+  ggsave("inst/figures/mimic-pval.pdf", height = 3.5, width = 6, scale = 0.85)
+}

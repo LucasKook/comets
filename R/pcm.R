@@ -79,11 +79,8 @@ pcm <- function(
     Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
     reg_YonZ = "rf", reg_YhatonZ = "rf", reg_VonXZ = "rf",
     reg_RonZ = "rf", args_YonXZ = NULL, args_YonZ = NULL,
-    args_YhatonZ = list(mtry = identity),
-    args_VonXZ = list(mtry = identity),
-    args_RonZ = list(mtry = identity),
-    frac = 0.5, indices = NULL,
-    coin = FALSE, cointrol = NULL,
+    args_YhatonZ = NULL, args_VonXZ = NULL, args_RonZ = NULL,
+    frac = 0.5, indices = NULL, coin = FALSE, cointrol = NULL,
     return_fitted_models = FALSE,
     ...) {
   call <- match.call()
