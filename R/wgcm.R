@@ -18,7 +18,7 @@
 #'     See \code{?\link[comets]{regressions}} for more detail.
 #' @param args_wfun Additional arguments passed to \code{reg_XonZ}.
 #' @param frac Relative size of train split.
-#' @param ... Additional arguments passed to \code{reg_YonZ}.
+#' @param ... Additional arguments currently ignored.
 #'
 #' @returns Object of class '\code{wgcm}' and '\code{htest}' with the following
 #' components:
@@ -47,14 +47,13 @@
 #' (wgcm1 <- wgcm(Y, X, Z))
 #'
 wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
-                 args_XonZ = NULL, args_wfun = NULL, frac = 0.5,
+                 args_YonZ = NULL, args_XonZ = NULL, args_wfun = NULL, frac = 0.5,
                  B = 499L, coin = TRUE, cointrol = NULL,
                  return_fitted_models = FALSE, ...) {
   Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
   alternative <- "greater"
-  args <- if (length(list(...)) > 0) list(...) else NULL
 
   ### Sample splitting
   dsp <- .split_sample(Y, X, Z, frac = frac)
@@ -66,7 +65,7 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
   Zte <- dsp$Zte
 
   ### Estimate weight function and compute weights
-  wYZ <- do.call(reg_YonZ, c(list(y = Ytr, x = Ztr), args))
+  wYZ <- do.call(reg_YonZ, c(list(y = Ytr, x = Ztr), args_YonZ))
   wrY <- stats::residuals(wYZ, response = Ytr, data = Ztr)
 
   wXZ <- .multi_regression(Xtr, Ztr, reg_XonZ, args_XonZ, return_fitted_models)
@@ -80,7 +79,7 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
   W <- do.call("cbind", lapply(mW, \(mZ) sign(predict(mZ, data = Zte))))
 
   ### GCM on test data with weights
-  YZ <- do.call(reg_YonZ, c(list(y = Yte, x = Zte), args))
+  YZ <- do.call(reg_YonZ, c(list(y = Yte, x = Zte), args_YonZ))
   rY <- stats::residuals(YZ, response = Yte, data = Zte)
   XZ <- .multi_regression(Xte, Zte, reg_XonZ, args_XonZ, return_fitted_models)
   rX <- XZ[["residuals"]]
