@@ -49,11 +49,14 @@
 wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
                  args_YonZ = NULL, args_XonZ = NULL, args_wfun = NULL, frac = 0.5,
                  B = 499L, coin = TRUE, cointrol = NULL,
-                 return_fitted_models = FALSE, ...) {
+                 return_fitted_models = FALSE, multivariate = c("none", "YonZ", "XonZ", "both"),
+                 ...) {
   Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
   alternative <- "greater"
+  multivariate <- match.arg(multivariate)
+  mvXonZ <- multivariate %in% c("XonZ", "both")
 
   ### Sample splitting
   dsp <- .split_sample(Y, X, Z, frac = frac)
@@ -68,7 +71,7 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
   wYZ <- do.call(reg_YonZ, c(list(y = Ytr, x = Ztr), args_YonZ))
   wrY <- stats::residuals(wYZ, response = Ytr, data = Ztr)
 
-  wXZ <- .multi_regression(Xtr, Ztr, reg_XonZ, args_XonZ, return_fitted_models)
+  wXZ <- .multi_regression(Xtr, Ztr, reg_XonZ, args_XonZ, return_fitted_models, mvXonZ)
   wrX <- wXZ[["residuals"]]
   wmX <- wXZ[["models"]]
 
@@ -81,7 +84,7 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
   ### GCM on test data with weights
   YZ <- do.call(reg_YonZ, c(list(y = Yte, x = Zte), args_YonZ))
   rY <- stats::residuals(YZ, response = Yte, data = Zte)
-  XZ <- .multi_regression(Xte, Zte, reg_XonZ, args_XonZ, return_fitted_models)
+  XZ <- .multi_regression(Xte, Zte, reg_XonZ, args_XonZ, return_fitted_models, mvXonZ)
   rX <- XZ[["residuals"]]
   mX <- XZ[["models"]]
 

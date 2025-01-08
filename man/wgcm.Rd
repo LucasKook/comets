@@ -19,6 +19,7 @@ wgcm(
   coin = TRUE,
   cointrol = NULL,
   return_fitted_models = FALSE,
+  multivariate = c("none", "YonZ", "XonZ", "both"),
   ...
 )
 }
@@ -61,6 +62,11 @@ The default is \code{TRUE}.}
 
 \item{return_fitted_models}{Logical; whether to return the fitted regressions
 (default is \code{FALSE}).}
+
+\item{multivariate}{Character; specifying which regression can handle
+multivariate outcomes (\code{"none"}, \code{"YonZ"}, \code{"XonZ"}, or
+\code{"both"}). If \code{"none"}, then the regression is run using each
+column in Y (or X) as the response.}
 
 \item{...}{Additional arguments currently ignored.}
 }
