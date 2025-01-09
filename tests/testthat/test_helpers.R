@@ -267,7 +267,6 @@ test_that("rf works with different response types", {
 })
 
 test_that("GCM with multivariate regressions works", {
-  devtools::load_all()
   set.seed(12)
   tn <- 3e2
   set.seed(12)
