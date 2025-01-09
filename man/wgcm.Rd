@@ -11,6 +11,7 @@ wgcm(
   reg_YonZ = "rf",
   reg_XonZ = "rf",
   reg_wfun = "rf",
+  args_YonZ = NULL,
   args_XonZ = NULL,
   args_wfun = NULL,
   frac = 0.5,
@@ -18,6 +19,7 @@ wgcm(
   coin = TRUE,
   cointrol = NULL,
   return_fitted_models = FALSE,
+  multivariate = c("none", "YonZ", "XonZ", "both"),
   ...
 )
 }
@@ -39,6 +41,8 @@ X on Z. See \code{?\link[comets]{regressions}} for more detail.}
 estimating the weighting function.
 See \code{?\link[comets]{regressions}} for more detail.}
 
+\item{args_YonZ}{A list of named arguments passed to \code{reg_YonZ}.}
+
 \item{args_XonZ}{A list of named arguments passed to \code{reg_XonZ}.}
 
 \item{args_wfun}{Additional arguments passed to \code{reg_XonZ}.}
@@ -59,7 +63,12 @@ The default is \code{TRUE}.}
 \item{return_fitted_models}{Logical; whether to return the fitted regressions
 (default is \code{FALSE}).}
 
-\item{...}{Additional arguments passed to \code{reg_YonZ}.}
+\item{multivariate}{Character; specifying which regression can handle
+multivariate outcomes (\code{"none"}, \code{"YonZ"}, \code{"XonZ"}, or
+\code{"both"}). If \code{"none"}, then the regression is run using each
+column in Y (or X) as the response.}
+
+\item{...}{Additional arguments currently ignored.}
 }
 \value{
 Object of class '\code{wgcm}' and '\code{htest}' with the following

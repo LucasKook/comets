@@ -265,3 +265,16 @@ test_that("rf works with different response types", {
     comet(mcc ~ bin | x, data = dat)
   })
 })
+
+test_that("GCM with multivariate regressions works", {
+  devtools::load_all()
+  set.seed(12)
+  tn <- 3e2
+  set.seed(12)
+  X <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(X) <- c("X1", "X2")
+  Z <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(Z) <- c("Z1", "Z2")
+  Y <- cbind(Y1 = rnorm(tn), Y2 = rnorm(tn), Y3 = rnorm(tn))
+  expect_no_error(gcm1 <- gcm(Y, X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm", multivariate = "both"))
+})
