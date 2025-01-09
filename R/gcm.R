@@ -269,7 +269,7 @@ gcm <- function(
 #'
 #' @exportS3Method plot gcm
 plot.gcm <- function(x, plot = TRUE, ...) {
-  if (requireNamespace("ggplot2")) {
+  if (requireNamespace("ggplot2") & requireNamespace("tidyr") & requireNamespace("dplyr")) {
     .data <- NULL
     pd <- tidyr::pivot_longer(data.frame(rY = unname(x$rY), rX = unname(x$rX)),
       dplyr::starts_with("rX"),
