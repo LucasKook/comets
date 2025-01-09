@@ -276,12 +276,15 @@ tuned_rf <- function(y, x, k = 5, md = 1:5,
 # Boosting ---------------------------------------------------------------
 
 xgb <- function(y, x, nrounds = 2, verbose = 0, ...) {
-  bst <- do.call("xgboost", c(list(
-    data = x, label = y, nrounds = nrounds,
-    verbose = verbose
-  ), list(...)))
-  class(bst) <- c("xgb", class(bst))
-  bst
+  if (requireNamespace("xgboost")) {
+    bst <- do.call("xgboost", c(list(
+      data = x, label = y, nrounds = nrounds,
+      verbose = verbose
+    ), list(...)))
+    class(bst) <- c("xgb", class(bst))
+    return(bst)
+  }
+  stop("Package `xgboost` not available.")
 }
 
 #' @exportS3Method predict xgb
