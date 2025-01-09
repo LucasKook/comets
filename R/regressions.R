@@ -272,3 +272,26 @@ tuned_rf <- function(y, x, k = 5, md = 1:5,
   class(rf) <- c("rf", class(rf))
   rf
 }
+
+# Boosting ---------------------------------------------------------------
+
+xgb <- function(y, x, nrounds = 2, verbose = 0, ...) {
+  bst <- do.call("xgboost", c(list(
+    data = x, label = y, nrounds = nrounds,
+    verbose = verbose
+  ), list(...)))
+  class(bst) <- c("xgb", class(bst))
+  bst
+}
+
+#' @exportS3Method predict xgb
+predict.xgb <- function(object, data = NULL, ...) {
+  class(object) <- class(object)[-1]
+  predict(object, data, ...)
+}
+
+#' @exportS3Method residuals xgb
+residuals.xgb <- function(object, response = NULL, data = NULL, ...) {
+  preds <- predict(object, data = data, ...)
+  .compute_residuals(response, preds)
+}

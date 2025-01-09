@@ -58,6 +58,9 @@ test_that("GCM with different regressions", {
     gcm4 <- gcm(Y, X, Z, reg_XonZ = "qrf", reg_YonZ = "qrf")
     gcm5 <- gcm(Y, X, Z, reg_XonZ = "postlasso", reg_YonZ = "postlasso")
     gcm6 <- gcm(Y, X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm")
+    if (require("xgboost")) {
+      gcm7 <- gcm(Y, X, Z, reg_XonZ = "xgb", reg_YonZ = "xgb")
+    }
     tmp <- plot(gcm6, plot = FALSE)
   })
 })
@@ -269,7 +272,6 @@ test_that("rf works with different response types", {
 test_that("GCM with multivariate regressions works", {
   set.seed(12)
   tn <- 3e2
-  set.seed(12)
   X <- matrix(rnorm(2 * tn), ncol = 2)
   colnames(X) <- c("X1", "X2")
   Z <- matrix(rnorm(2 * tn), ncol = 2)
