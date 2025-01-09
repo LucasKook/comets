@@ -236,3 +236,65 @@ residuals.cox <- function(object, response = NULL, data = NULL, ...) {
   preds <- -log(predict.cox(object, data, type = "survival"))
   .compute_residuals(response[, 2], preds)
 }
+
+# Tuned (mtry/max.depth) ranger ------------------------------------------
+
+tuned_rf <- function(y, x, k = 5, md = 1:5,
+                     mt = list(1, \(p) ceiling(sqrt(p)), identity),
+                     verbose = FALSE,
+                     ...) {
+  args <- list(...)
+  if (length(unique(y)) == 2) {
+    y <- factor(y)
+  }
+  if (is.factor(y)) {
+    args$probability <- TRUE
+  }
+
+  ### Tune OOB max.depth
+  tmp_args <- args
+  rfs <- lapply(seq_along(md), \(tmd) {
+    lapply(seq_along(mt), \(tmt) {
+      if (verbose) {
+        cat(
+          "Tuning step with max.depth", tmd, "out of", length(md),
+          "and mtry", tmt, "out of", length(mt), "\n"
+        )
+      }
+      tmp_args$max.depth <- md[tmd]
+      tmp_args$mtry <- mt[[tmt]]
+      do.call("ranger", c(list(y = y, x = x), tmp_args))
+    })
+  }) |> unlist(recursive = FALSE)
+
+  woob <- which.min(sapply(rfs, `[[`, "prediction.error"))
+  rf <- rfs[[woob]]
+  class(rf) <- c("rf", class(rf))
+  rf
+}
+
+# Boosting ---------------------------------------------------------------
+
+xgb <- function(y, x, nrounds = 2, verbose = 0, ...) {
+  if (requireNamespace("xgboost")) {
+    bst <- do.call("xgboost", c(list(
+      data = x, label = y, nrounds = nrounds,
+      verbose = verbose
+    ), list(...)))
+    class(bst) <- c("xgb", class(bst))
+    return(bst)
+  }
+  stop("Package `xgboost` not available.")
+}
+
+#' @exportS3Method predict xgb
+predict.xgb <- function(object, data = NULL, ...) {
+  class(object) <- class(object)[-1]
+  predict(object, data, ...)
+}
+
+#' @exportS3Method residuals xgb
+residuals.xgb <- function(object, response = NULL, data = NULL, ...) {
+  preds <- predict(object, data = data, ...)
+  .compute_residuals(response, preds)
+}
