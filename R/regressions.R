@@ -239,8 +239,8 @@ residuals.cox <- function(object, response = NULL, data = NULL, ...) {
 
 # Tuned (mtry/max.depth) ranger ------------------------------------------
 
-tuned_rf <- function(y, x, k = 5, md = 1:5,
-                     mt = list(1, \(p) ceiling(sqrt(p)), identity),
+tuned_rf <- function(y, x, k = 5, max.depths = 1:5,
+                     mtrys = list(1, \(p) ceiling(sqrt(p)), identity),
                      verbose = FALSE,
                      ...) {
   args <- list(...)
@@ -253,16 +253,16 @@ tuned_rf <- function(y, x, k = 5, md = 1:5,
 
   ### Tune OOB max.depth
   tmp_args <- args
-  rfs <- lapply(seq_along(md), \(tmd) {
-    lapply(seq_along(mt), \(tmt) {
+  rfs <- lapply(seq_along(max.depths), \(tmd) {
+    lapply(seq_along(mtrys), \(tmt) {
       if (verbose) {
         cat(
-          "Tuning step with max.depth", tmd, "out of", length(md),
-          "and mtry", tmt, "out of", length(mt), "\n"
+          "Tuning step with max.depth", tmd, "out of", length(max.depths),
+          "and mtry", tmt, "out of", length(mtrys), "\n"
         )
       }
-      tmp_args$max.depth <- md[tmd]
-      tmp_args$mtry <- mt[[tmt]]
+      tmp_args$max.depth <- max.depths[tmd]
+      tmp_args$mtry <- mtrys[[tmt]]
       do.call("ranger", c(list(y = y, x = x), tmp_args))
     })
   }) |> unlist(recursive = FALSE)
@@ -281,6 +281,36 @@ xgb <- function(y, x, nrounds = 2, verbose = 0, ...) {
       data = x, label = y, nrounds = nrounds,
       verbose = verbose
     ), list(...)))
+    class(bst) <- c("xgb", class(bst))
+    return(bst)
+  }
+  stop("Package `xgboost` not available.")
+}
+
+tuned_xgb <- function(y, x, etas = c(0.1, 0.5, 1), max_depths = 1:5,
+                      nfold = 5, nrounds = c(2, 10, 50), verbose = 0,
+                      metrics = list("rmse"), ...) {
+  if (requireNamespace("xgboost")) {
+    cvres <- lapply(etas, \(teta) {
+      lapply(max_depths, \(tmd) {
+        lapply(nrounds, \(tnr) {
+          cv <- do.call("xgb.cv", c(list(
+            data = x, label = y, nrounds = tnr,
+            verbose = verbose, eta = teta, max_depth = tmd,
+            metrics = metrics, nfold = nfold
+          ), list(...)))
+          err <- mean(cv$evaluation_log[[paste0("test_", metrics[[1]], "_mean")]])
+          data.frame(
+            nrounds = tnr, eta = teta, max_depth = tmd, error = err
+          )
+        }) |> do.call("rbind", args = _)
+      }) |> do.call("rbind", args = _)
+    }) |> do.call("rbind", args = _)
+    best <- which.min(cvres$error)[1]
+    bst <- xgb(y, x,
+      nrounds = cvres$nrounds[best], verbose = verbose,
+      max_depth = cvres$max_depth[best], eta = cvres$eta[best], ...
+    )
     class(bst) <- c("xgb", class(bst))
     return(bst)
   }
