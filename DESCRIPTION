@@ -1,13 +1,14 @@
 Package: comets
 Type: Package
-Title: Covariance Measure Tests for Conditional Independence 
+Title: Covariance Measure Tests for Conditional Independence
 Version: 0.1-1
 Authors@R: c(person("Lucas", "Kook", email = "lucasheinrich.kook@gmail.com",
-    role = c("aut", "cre")), person("Anton Rask", "Lundborg", role = "ctb"))
-Description: Covariance measure tests for conditional independence testing 
+    role = c("aut", "cre"), comment = c(ORCID = "0000-0002-7546-7356")),
+    person("Anton Rask", "Lundborg", role = "ctb"))
+Description: Covariance measure tests for conditional independence testing
     against conditional covariance and nonlinear conditional mean alternatives.
-    The package implements versions of the generalised covariance measure test 
-    (Shah and Peters, 2020, <doi:10.1214/19-aos1857>) and projected covariance 
+    The package implements versions of the generalised covariance measure test
+    (Shah and Peters, 2020, <doi:10.1214/19-aos1857>) and projected covariance
     measure test (Lundborg et al., 2023, <doi:10.48550/arXiv.2211.02039>). The
     tram-GCM test, for censored responses, is implemented including the Cox
     model and survival forests (Kook et al., 2024,
@@ -18,7 +19,7 @@ Imports: ranger, glmnet, Formula, survival, coin
 License: GPL-3
 Encoding: UTF-8
 RoxygenNote: 7.3.1
-Suggests: 
+Suggests:
     testthat (>= 3.0.0), ggplot2, tidyr, dplyr, xgboost
 Config/testthat/edition: 3
 URL: https://github.com/LucasKook/comets
