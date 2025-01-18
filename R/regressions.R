@@ -3,10 +3,12 @@
 #' @param y Vector (or matrix) of response values.
 #' @param x Design matrix of predictors.
 #' @param ... Additional arguments passed to the underlying regression method.
-#'    In case of \code{"rf"}, \code{"survforest"} and \code{"qrf"}, this is
-#'    \code{\link[ranger]{ranger}}. In case of \code{"lasso"} and
-#'    \code{"ridge"}, this is \code{\link[glmnet]{glmnet}}. In case of
-#'    \code{"cox"}, this is \code{\link[survival]{coxph}}.
+#'    In case of \code{"rf"}, \code{"tuned_rf"}, \code{"survforest"} and
+#'    \code{"qrf"}, this is \code{\link[ranger]{ranger}}. In case of
+#'    \code{"lasso"} and \code{"ridge"}, this is \code{\link[glmnet]{glmnet}}.
+#'    In case of \code{"cox"}, this is \code{\link[survival]{coxph}}. In case
+#'    of \code{"xgb"} and \code{"tuned_xgb"} this is
+#'    \code{\link[xgboost]{xgboost}}.
 #' @details
 #' The implemented choices are \code{"rf"} for random forests as implemented in
 #' ranger, \code{"lasso"} for cross-validated Lasso regression (using the
@@ -17,7 +19,15 @@
 #' for quantile and survival random forests, respectively. The option
 #' \code{"postlasso"} option refers to a cross-validated LASSO (using the
 #' one-standard error rule) and subsequent OLS regression. The \code{"lrm"}
-#' option implements a standard linear regression model.
+#' option implements a standard linear regression model. The \code{"xgb"} and
+#' \code{"tuned_xgb"} options require the \code{xgboost} package.
+#'
+#' The \code{"tuned_rf"} regression method tunes the \code{mtry} and
+#' \code{max.depth} parameters in \code{\link[ranger]{ranger}} out-of-bag.
+#' The \code{"tuned_xgb"} regression method uses k-fold cross-validation to
+#' tune the \code{nrounds}, \code{mtry} and \code{max_depth} parameters in
+#' \code{\link[xgboost]{xgb.cv}}.
+#'
 #' New regression methods can be implemented and supplied as well and need the
 #' following structure. The regression method \code{"custom_reg"} needs to take
 #' arguments \code{y, x, ...}, fit the model using \code{y} and \code{x} as
@@ -239,7 +249,12 @@ residuals.cox <- function(object, response = NULL, data = NULL, ...) {
 
 # Tuned (mtry/max.depth) ranger ------------------------------------------
 
-tuned_rf <- function(y, x, k = 5, max.depths = 1:5,
+#' @rdname regressions
+#' @param max.depths Values for \code{max.depth} to tune out-of-bag. See
+#'     \code{\link[ranger]{ranger}}.
+#' @param mtrys for \code{mtry} to tune out-of-bag. See
+#'     \code{\link[ranger]{ranger}}.
+tuned_rf <- function(y, x, max.depths = 1:5,
                      mtrys = list(1, \(p) ceiling(sqrt(p)), identity),
                      verbose = FALSE,
                      ...) {
@@ -275,6 +290,9 @@ tuned_rf <- function(y, x, k = 5, max.depths = 1:5,
 
 # Boosting ---------------------------------------------------------------
 
+#' @rdname regressions
+#' @param nrounds See \code{\link[xgboost]{xgboost}}.
+#' @param verbose See \code{\link[xgboost]{xgboost}}.
 xgb <- function(y, x, nrounds = 2, verbose = 0, ...) {
   if (requireNamespace("xgboost")) {
     bst <- do.call("xgboost", c(list(
@@ -287,6 +305,13 @@ xgb <- function(y, x, nrounds = 2, verbose = 0, ...) {
   stop("Package `xgboost` not available.")
 }
 
+#' @rdname regressions
+#' @param etas Values for \code{eta} to cross-validate. See
+#'     \code{\link[xgboost]{xgboost}}.
+#' @param max_depths Values for \code{max_depth} to cross-validate. See
+#'     \code{\link[xgboost]{xgboost}}.
+#' @param metrics See \code{\link[xgboost]{xgboost}}.
+#' @param nfold Number of folds for \code{nfold}-cross validation.
 tuned_xgb <- function(y, x, etas = c(0.1, 0.5, 1), max_depths = 1:5,
                       nfold = 5, nrounds = c(2, 10, 50), verbose = 0,
                       metrics = list("rmse"), ...) {
