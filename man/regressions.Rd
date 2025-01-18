@@ -10,6 +10,9 @@
 \alias{ridge}
 \alias{postlasso}
 \alias{cox}
+\alias{tuned_rf}
+\alias{xgb}
+\alias{tuned_xgb}
 \title{Implemented regression methods}
 \usage{
 rf(y, x, ...)
@@ -29,6 +32,29 @@ ridge(y, x, ...)
 postlasso(y, x, ...)
 
 cox(y, x, ...)
+
+tuned_rf(
+  y,
+  x,
+  max.depths = 1:5,
+  mtrys = list(1, function(p) ceiling(sqrt(p)), identity),
+  verbose = FALSE,
+  ...
+)
+
+xgb(y, x, nrounds = 2, verbose = 0, ...)
+
+tuned_xgb(
+  y,
+  x,
+  etas = c(0.1, 0.5, 1),
+  max_depths = 1:5,
+  nfold = 5,
+  nrounds = c(2, 10, 50),
+  verbose = 0,
+  metrics = list("rmse"),
+  ...
+)
 }
 \arguments{
 \item{y}{Vector (or matrix) of response values.}
@@ -36,10 +62,32 @@ cox(y, x, ...)
 \item{x}{Design matrix of predictors.}
 
 \item{...}{Additional arguments passed to the underlying regression method.
-In case of \code{"rf"}, \code{"survforest"} and \code{"qrf"}, this is
-\code{\link[ranger]{ranger}}. In case of \code{"lasso"} and
-\code{"ridge"}, this is \code{\link[glmnet]{glmnet}}. In case of
-\code{"cox"}, this is \code{\link[survival]{coxph}}.}
+In case of \code{"rf"}, \code{"tuned_rf"}, \code{"survforest"} and
+\code{"qrf"}, this is \code{\link[ranger]{ranger}}. In case of
+\code{"lasso"} and \code{"ridge"}, this is \code{\link[glmnet]{glmnet}}.
+In case of \code{"cox"}, this is \code{\link[survival]{coxph}}. In case
+of \code{"xgb"} and \code{"tuned_xgb"} this is
+\code{\link[xgboost]{xgboost}}.}
+
+\item{max.depths}{Values for \code{max.depth} to tune out-of-bag. See
+\code{\link[ranger]{ranger}}.}
+
+\item{mtrys}{for \code{mtry} to tune out-of-bag. See
+\code{\link[ranger]{ranger}}.}
+
+\item{verbose}{See \code{\link[xgboost]{xgboost}}.}
+
+\item{nrounds}{See \code{\link[xgboost]{xgboost}}.}
+
+\item{etas}{Values for \code{eta} to cross-validate. See
+\code{\link[xgboost]{xgboost}}.}
+
+\item{max_depths}{Values for \code{max_depth} to cross-validate. See
+\code{\link[xgboost]{xgboost}}.}
+
+\item{nfold}{Number of folds for \code{nfold}-cross validation.}
+
+\item{metrics}{See \code{\link[xgboost]{xgboost}}.}
 }
 \description{
 Implemented regression methods
@@ -54,7 +102,15 @@ hazards model as implemented in survival, \code{"qrf"} or \code{"survforest"}
 for quantile and survival random forests, respectively. The option
 \code{"postlasso"} option refers to a cross-validated LASSO (using the
 one-standard error rule) and subsequent OLS regression. The \code{"lrm"}
-option implements a standard linear regression model.
+option implements a standard linear regression model. The \code{"xgb"} and
+\code{"tuned_xgb"} options require the \code{xgboost} package.
+
+The \code{"tuned_rf"} regression method tunes the \code{mtry} and
+\code{max.depth} parameters in \code{\link[ranger]{ranger}} out-of-bag.
+The \code{"tuned_xgb"} regression method uses k-fold cross-validation to
+tune the \code{nrounds}, \code{mtry} and \code{max_depth} parameters in
+\code{\link[xgboost]{xgb.cv}}.
+
 New regression methods can be implemented and supplied as well and need the
 following structure. The regression method \code{"custom_reg"} needs to take
 arguments \code{y, x, ...}, fit the model using \code{y} and \code{x} as
