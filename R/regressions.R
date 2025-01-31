@@ -235,24 +235,24 @@ unilasso <- function(
     y, x, loo = TRUE, lower.limits = 0, standardize = FALSE,
     s = "lambda.min", ...) {
   ms <- apply(x, 2, \(tx) {
-    lm(y ~ tx)
+    stats::lm(y ~ tx)
   }, simplify = FALSE)
   xloo <- if (loo) {
     lapply(ms, \(m) {
-      y - residuals(m) / (1 - hatvalues(m))
+      y - stats::residuals(m) / (1 - stats::hatvalues(m))
     })
   } else {
-    lapply(ms, predict)
+    lapply(ms, stats::predict)
   }
   xloo <- do.call("cbind", xloo)
-  ml <- cv.glmnet(
+  ml <- glmnet::cv.glmnet(
     x = xloo, y = y, standardize = standardize,
     lower.limits = lower.limits
   )
-  cfs <- lapply(ms, coef) |> do.call("rbind", args = _)
+  cfs <- lapply(ms, stats::coef) |> do.call("rbind", args = _)
   cf0 <- cfs[, 1]
   cfx <- cfs[, 2]
-  cfl <- as.double(cfll <- coef(ml, s = s))
+  cfl <- as.double(cfll <- stats::coef(ml, s = s))
   coef <- c(cfl[1] + sum(cfl[-1] * cf0), cfl[-1] * cfx)
   names(coef) <- rownames(cfll)
 
@@ -273,7 +273,7 @@ predict.unilasso <- function(object, data, ...) {
 }
 
 residuals.unilasso <- function(object, response, data, ...) {
-  response - predict(object, data, ...)
+  response - stats::predict(object, data, ...)
 }
 
 # Cox ---------------------------------------------------------------------
