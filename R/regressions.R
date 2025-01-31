@@ -230,6 +230,52 @@ residuals.postlasso <- function(object, response = NULL, data = NULL, ...) {
   .compute_residuals(response, preds)
 }
 
+### unilasso
+unilasso <- function(
+    y, x, loo = TRUE, lower.limits = 0, standardize = FALSE,
+    s = "lambda.min", ...) {
+  ms <- apply(x, 2, \(tx) {
+    lm(y ~ tx)
+  }, simplify = FALSE)
+  xloo <- if (loo) {
+    lapply(ms, \(m) {
+      y - residuals(m) / (1 - hatvalues(m))
+    })
+  } else {
+    lapply(ms, predict)
+  }
+  xloo <- do.call("cbind", xloo)
+  ml <- cv.glmnet(
+    x = xloo, y = y, standardize = standardize,
+    lower.limits = lower.limits
+  )
+  cfs <- lapply(ms, coef) |> do.call("rbind", args = _)
+  cf0 <- cfs[, 1]
+  cfx <- cfs[, 2]
+  cfl <- as.double(cfll <- coef(ml, s = s))
+  coef <- c(cfl[1] + sum(cfl[-1] * cf0), cfl[-1] * cfx)
+  names(coef) <- rownames(cfll)
+
+  structure(list(
+    # y = y,
+    # x = x,
+    # xloo = xloo,
+    lm_fits = ms,
+    lasso_fit = ml,
+    cfs = cfs,
+    cfl = cfl,
+    coef = coef
+  ), class = "unilasso")
+}
+
+predict.unilasso <- function(object, data, ...) {
+  cbind(1, data) %*% object$coef
+}
+
+residuals.unilasso <- function(object, response, data, ...) {
+  response - predict(object, data, ...)
+}
+
 # Cox ---------------------------------------------------------------------
 
 #' @rdname regressions
