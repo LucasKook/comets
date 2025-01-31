@@ -25,11 +25,11 @@ lrm(y, x, ...)
 
 glrm(y, x, ...)
 
-lasso(y, x, ...)
+lasso(y, x, s = "lambda.min", ...)
 
-ridge(y, x, ...)
+ridge(y, x, s = "lambda.min", ...)
 
-postlasso(y, x, ...)
+postlasso(y, x, s = "lambda.min", ...)
 
 cox(y, x, ...)
 
@@ -68,6 +68,9 @@ In case of \code{"rf"}, \code{"tuned_rf"}, \code{"survforest"} and
 In case of \code{"cox"}, this is \code{\link[survival]{coxph}}. In case
 of \code{"xgb"} and \code{"tuned_xgb"} this is
 \code{\link[xgboost]{xgboost}}.}
+
+\item{s}{Which lambda to use for prediction, defaults to
+\code{"lambda.min"}. See \code{\link[glmnet]{cv.glmnet}}}
 
 \item{max.depths}{Values for \code{max.depth} to tune out-of-bag. See
 \code{\link[ranger]{ranger}}.}

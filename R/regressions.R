@@ -174,9 +174,12 @@ residuals.glrm <- function(object, response = NULL, data = NULL, ...) {
 }
 
 #' @importFrom glmnet cv.glmnet
+#' @param s Which lambda to use for prediction, defaults to
+#'     \code{"lambda.min"}. See \code{\link[glmnet]{cv.glmnet}}
 #' @rdname regressions
-lasso <- function(y, x, ...) {
+lasso <- function(y, x, s = "lambda.min", ...) {
   obj <- cv.glmnet(y = y, x = as.matrix(x), ...)
+  obj$s <- s
   class(obj) <- c("lasso", class(obj))
   obj
 }
@@ -184,7 +187,7 @@ lasso <- function(y, x, ...) {
 #' @exportS3Method predict lasso
 predict.lasso <- function(object, data = NULL, ...) {
   class(object) <- class(object)[-1]
-  predict(object, newx = as.matrix(data), s = "lambda.1se")[, 1]
+  predict(object, newx = as.matrix(data), s = object$s)[, 1]
 }
 
 #' @exportS3Method residuals lasso
@@ -194,16 +197,17 @@ residuals.lasso <- function(object, response = NULL, data = NULL, ...) {
 }
 
 #' @rdname regressions
-ridge <- function(y, x, ...) {
+ridge <- function(y, x, s = "lambda.min", ...) {
   obj <- cv.glmnet(y = y, x = as.matrix(x), alpha = 0, ...)
+  obj$s <- s
   class(obj) <- c("lasso", class(obj))
   obj
 }
 
 #' @rdname regressions
-postlasso <- function(y, x, ...) {
+postlasso <- function(y, x, s = "lambda.min", ...) {
   obj <- cv.glmnet(y = y, x = as.matrix(x), ...)
-  nz <- which(stats::coef(obj, s = "lambda.1se")[-1] != 0)
+  nz <- which(stats::coef(obj, s = s)[-1] != 0)
   obj <- if (!identical(nz, integer(0))) {
     stats::lm(y ~ x[, nz])
   } else {
