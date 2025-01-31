@@ -144,8 +144,8 @@ testing and the generalised covariance measure," The Annals of Statistics,
 
 [2] Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2024). The
 Projected Covariance Measure for assumption-lean variable significance testing.
-The Annals of Statistics. To appear.
-[doi:10.48550/arXiv.2211.02039](https://doi.org/10.48550/arXiv.2211.02039)
+The Annals of Statistics, 52(6), 2851-2878.
+[doi:10.1214/24-AOS2447](https://doi.org/10.1214/24-AOS2447)
 
 [3] Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance
 testing in supervised learning with multimodal data. 
