@@ -62,6 +62,7 @@ test_that("GCM with different regressions", {
       gcm7 <- gcm(Y, X, Z, reg_XonZ = "xgb", reg_YonZ = "xgb")
     }
     tmp <- plot(gcm6, plot = FALSE)
+    gcm8 <- gcm(Y, X, Z, reg_XonZ = "unilasso", reg_YonZ = "unilasso")
   })
 })
 
