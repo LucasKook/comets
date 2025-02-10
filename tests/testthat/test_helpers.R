@@ -282,7 +282,7 @@ test_that("GCM with multivariate regressions works", {
 })
 
 test_that("GCM with (tuned) xgboost and rangers works", {
-  if (requireNamespace("xgboost")) {
+  if (require("xgboost") & require("lightgbm")) {
     set.seed(12)
     tn <- 1e2
     X <- matrix(rnorm(2 * tn), ncol = 2)
@@ -293,5 +293,6 @@ test_that("GCM with (tuned) xgboost and rangers works", {
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "tuned_xgb", reg_YonZ = "tuned_xgb"))
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "xgb", reg_YonZ = "xgb"))
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "tuned_rf", reg_YonZ = "tuned_rf"))
+    expect_no_error(gcm(Y, X, Z, reg_XonZ = "lgbm", reg_YonZ = "lgbm"))
   }
 })

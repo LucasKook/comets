@@ -13,6 +13,7 @@
 \alias{tuned_rf}
 \alias{xgb}
 \alias{tuned_xgb}
+\alias{lgbm}
 \title{Implemented regression methods}
 \usage{
 rf(y, x, ...)
@@ -42,7 +43,7 @@ tuned_rf(
   ...
 )
 
-xgb(y, x, nrounds = 2, verbose = 0, ...)
+xgb(y, x, nrounds = 2L, verbose = 0L, ...)
 
 tuned_xgb(
   y,
@@ -55,6 +56,8 @@ tuned_xgb(
   metrics = list("rmse"),
   ...
 )
+
+lgbm(y, x, nrounds = 100L, verbose = -1L, ...)
 }
 \arguments{
 \item{y}{Vector (or matrix) of response values.}
