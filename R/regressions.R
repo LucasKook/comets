@@ -142,7 +142,9 @@ lrm <- function(y, x, ...) {
 #' @exportS3Method predict lrm
 predict.lrm <- function(object, data = NULL, ...) {
   class(object) <- class(object)[-1]
-  c(cbind(1, as.matrix(data)) %*% object$coefficients)
+  cfx <- object$coefficients
+  cfx[is.na(cfx)] <- 0
+  c(cbind(1, as.matrix(data)) %*% cfx)
 }
 
 #' @exportS3Method residuals lrm
