@@ -1,3 +1,12 @@
+---
+output:
+  md_document:
+    variant: "markdown_github"
+---
+
+
+
+
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/LucasKook/comets/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/LucasKook/comets/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
@@ -143,7 +152,7 @@ Please cite the `comets` package as
 ```
 @article{10.1093/bib/bbae475,
 title={{Algorithm-Agnostic Significance Testing in Supervised Learning With Multimodal Data}},
-author={Lucas {\bf Kook} and Anton Rask Lundborg},
+author={Lucas Kook and Anton Rask Lundborg},
 year={2024},
 journal={Briefings in Bioinformatics},
 volume={25},
