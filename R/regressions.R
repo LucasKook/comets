@@ -142,7 +142,9 @@ lrm <- function(y, x, ...) {
 #' @exportS3Method predict lrm
 predict.lrm <- function(object, data = NULL, ...) {
   class(object) <- class(object)[-1]
-  c(cbind(1, as.matrix(data)) %*% object$coefficients)
+  cfx <- object$coefficients
+  cfx[is.na(cfx)] <- 0
+  c(cbind(1, as.matrix(data)) %*% cfx)
 }
 
 #' @exportS3Method residuals lrm
@@ -268,10 +270,12 @@ unilasso <- function(
   ), class = "unilasso")
 }
 
+#' @exportS3Method predict unilasso
 predict.unilasso <- function(object, data, ...) {
   cbind(1, data) %*% object$coef
 }
 
+#' @exportS3Method residuals unilasso
 residuals.unilasso <- function(object, response, data, ...) {
   response - stats::predict(object, data, ...)
 }
@@ -343,7 +347,7 @@ tuned_rf <- function(y, x, max.depths = 1:5,
 #' @rdname regressions
 #' @param nrounds See \code{\link[xgboost]{xgboost}}.
 #' @param verbose See \code{\link[xgboost]{xgboost}}.
-xgb <- function(y, x, nrounds = 2, verbose = 0, ...) {
+xgb <- function(y, x, nrounds = 2L, verbose = 0L, ...) {
   if (requireNamespace("xgboost")) {
     bst <- do.call("xgboost", c(list(
       data = x, label = y, nrounds = nrounds,
@@ -400,6 +404,32 @@ predict.xgb <- function(object, data = NULL, ...) {
 
 #' @exportS3Method residuals xgb
 residuals.xgb <- function(object, response = NULL, data = NULL, ...) {
+  preds <- predict(object, data = data, ...)
+  .compute_residuals(response, preds)
+}
+
+#' @rdname regressions
+lgbm <- function(y, x, nrounds = 100L, verbose = -1L, ...) {
+  if (requireNamespace("lightgbm")) {
+    dtr <- lightgbm::lgb.Dataset(data = x, label = y)
+    bst <- do.call("lgb.train", c(list(
+      data = dtr, nrounds = nrounds,
+      verbose = verbose
+    ), list(...)))
+    class(bst) <- c("lgbm", class(bst))
+    return(bst)
+  }
+  stop("Package `lightgbm` not available.")
+}
+
+#' @exportS3Method predict lgbm
+predict.lgbm <- function(object, data = NULL, ...) {
+  class(object) <- class(object)[-1]
+  predict(object, data, ...)
+}
+
+#' @exportS3Method residuals lgbm
+residuals.lgbm <- function(object, response = NULL, data = NULL, ...) {
   preds <- predict(object, data = data, ...)
   .compute_residuals(response, preds)
 }
