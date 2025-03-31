@@ -1,12 +1,3 @@
----
-output:
-  md_document:
-    variant: "markdown_github"
----
-
-
-
-
 <!-- badges: start -->
 [![R-CMD-check](https://github.com/LucasKook/comets/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/LucasKook/comets/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
