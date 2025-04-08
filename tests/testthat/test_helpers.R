@@ -195,6 +195,9 @@ test_that("comet wrapper works", {
   data("mtcars")
   expect_no_error({
     comet(mpg ~ cyl | disp, data = mtcars)
+    comet(mpg ~ cyl | 1, data = mtcars)
+    comet(mpg ~ cyl | 1, data = mtcars, test = "pcm")
+    comet(mpg ~ cyl | 1, data = mtcars, test = "wgcm")
     comet(cbind(mpg, cyl) ~ vs + mpg | disp, data = mtcars)
     comet(factor(vs) ~ cyl | disp, data = mtcars)
     comet(mpg ~ cyl | disp, data = mtcars, test = "pcm")
@@ -295,4 +298,26 @@ test_that("GCM with (tuned) xgboost and rangers works", {
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "tuned_rf", reg_YonZ = "tuned_rf"))
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "lgbm", reg_YonZ = "lgbm"))
   }
+})
+
+test_that("PCM with rep larger 1 and indices", {
+  expect_no_error({
+    set.seed(12)
+    tn <- 3e2
+    set.seed(12)
+    X <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(X) <- c("X1", "X2")
+    Z <- matrix(rnorm(2 * tn), ncol = 2)
+    colnames(Z) <- c("Z1", "Z2")
+    Y <- rnorm(tn)
+    pcm(Y, X, Z, reg_YonXZ = "lrm", reg_YonZ = "lrm", rep = 2)
+    rm <- "lrm"
+    pcm(Y, X, Z, reg_YonXZ = rm, reg_YonZ = rm, rep = 2)
+    indices <- list(1:150, 151:300)
+    pcm(Y, X, Z, reg_YonXZ = "lrm", reg_YonZ = "lrm", rep = 2, indices = indices)
+    tmp <- \(rm) {
+      pcm(Y, X, Z, reg_YonXZ = rm, reg_YonZ = rm, rep = 2)
+    }
+    tmp("lrm")
+  })
 })

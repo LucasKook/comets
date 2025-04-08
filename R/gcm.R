@@ -180,6 +180,9 @@ gcm <- function(
   if ("tibble" %in% class(x)) {
     x <- as.data.frame(x)
   }
+  if (NCOL(x) == 0) {
+    x <- matrix(1, nrow = NROW(x), ncol = 1)
+  }
   if (NCOL(x) == 1) {
     x <- as.matrix(x)
   }
