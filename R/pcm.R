@@ -94,12 +94,17 @@ pcm <- function(
       stop("Please supply a list of indices of length `rep`.")
     }
     pcms <- lapply(seq_len(rep), \(iter) {
-      call$rep <- 1
-      call$indices <- indices[iter]
-      call$Y <- Y
-      call$X <- X
-      call$Z <- Z
-      eval(call)
+      pcm(
+        Y = Y, X = X, Z = Z, rep = 1, est_vhat = est_vhat,
+        reg_YonXZ = reg_YonXZ, reg_YonZ = reg_YonZ,
+        reg_YhatonZ = reg_YhatonZ, reg_VonXZ = reg_VonXZ,
+        reg_RonZ = reg_RonZ, args_YonXZ = args_YonXZ,
+        args_YonZ = args_YonZ, args_YhatonZ = args_YhatonZ,
+        args_VonXZ = args_VonXZ, args_RonZ = args_RonZ,
+        frac = frac, indices = indices[[iter]], coin = coin,
+        cointrol = cointrol,
+        return_fitted_models = return_fitted_models, ...
+      )
     })
     stat <- mean(unlist(lapply(pcms, \(tst) tst$statistic)))
     pval <- pnorm(stat, lower.tail = FALSE)
