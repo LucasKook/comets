@@ -117,6 +117,26 @@ test_that("TRAM GCM works with coxph and survforest", {
   ))
 })
 
+test_that("original for tests", {
+  set.seed(12)
+  tn <- 3e2
+  X <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(X) <- c("X1", "X2")
+  Z <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(Z) <- c("Z1", "Z2")
+  Y <- cbind(rowSums(X) + rnorm(tn), rowSums(X) + rnorm(tn))
+  expect_no_error({
+    gcm(Y, X, Z, type = "max", coin = FALSE)
+    gcm(Y, X, Z, type = "quadratic", coin = FALSE)
+    gcm(Y[, 1], X, Z, type = "quadratic", coin = FALSE)
+    gcm(Y[, 1], X, Z, type = "max", coin = FALSE)
+    gcm(Y[, 1], X[, 1], Z, type = "quadratic", coin = FALSE)
+  })
+  expect_warning(
+    gcm(Y[, 1], X[, 1], Z, type = "max", coin = FALSE)
+  )
+})
+
 test_that("coin for tests", {
   expect_no_error({
     library("coin")
