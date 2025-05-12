@@ -317,6 +317,14 @@ test_that("GCM with (tuned) xgboost and rangers works", {
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "xgb", reg_YonZ = "xgb"))
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "tuned_rf", reg_YonZ = "tuned_rf"))
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "lgbm", reg_YonZ = "lgbm"))
+    expect_no_error(gcm(Y, X, Z,
+      reg_XonZ = "rf", reg_YonZ = "tuned_xgb",
+      args_YonZ = list(nfold = 2)
+    ))
+    expect_no_error(gcm(Y, X, Z,
+      reg_XonZ = "rf", reg_YonZ = "tuned_xgb",
+      args_YonZ = list(folds = list(1:50, 51:100))
+    ))
   }
 })
 

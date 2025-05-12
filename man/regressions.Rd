@@ -48,9 +48,10 @@ xgb(y, x, nrounds = 2L, verbose = 0L, ...)
 tuned_xgb(
   y,
   x,
+  nfold,
+  folds,
   etas = c(0.1, 0.5, 1),
   max_depths = 1:5,
-  nfold = 5,
   nrounds = c(2, 10, 50),
   verbose = 0,
   metrics = list("rmse"),
@@ -85,13 +86,15 @@ of \code{"xgb"} and \code{"tuned_xgb"} this is
 
 \item{nrounds}{See \code{\link[xgboost]{xgboost}}.}
 
+\item{nfold}{Number of folds for \code{nfold}-cross validation.}
+
+\item{folds}{Specify folds for cross validation.}
+
 \item{etas}{Values for \code{eta} to cross-validate. See
 \code{\link[xgboost]{xgboost}}.}
 
 \item{max_depths}{Values for \code{max_depth} to cross-validate. See
 \code{\link[xgboost]{xgboost}}.}
-
-\item{nfold}{Number of folds for \code{nfold}-cross validation.}
 
 \item{metrics}{See \code{\link[xgboost]{xgboost}}.}
 }
