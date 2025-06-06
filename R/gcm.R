@@ -71,7 +71,7 @@ gcm <- function(
     Y, X, Z, alternative = c("two.sided", "less", "greater"),
     reg_YonZ = "rf", reg_XonZ = "rf", args_YonZ = NULL,
     args_XonZ = NULL, type = c("quadratic", "max", "scalar"), B = 499L,
-    coin = TRUE, cointrol = list(distribution = "asymptotic"),
+    coin = FALSE, cointrol = list(distribution = "asymptotic"),
     return_fitted_models = FALSE, multivariate = c("none", "YonZ", "XonZ", "both"), ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
@@ -95,7 +95,7 @@ gcm <- function(
   rX <- XZ[["residuals"]]
   mX <- XZ[["models"]]
 
-  if (coin | NCOL(rY) > 1) {
+  if (coin) {
     tst <- do.call("independence_test", c(list(
       rY ~ rX,
       alternative = alternative, teststat = type
@@ -104,7 +104,11 @@ gcm <- function(
     stat <- coin::statistic(tst)
     pval <- coin::pvalue(tst)
   } else {
-    tst <- .gcm(c(rY), rX, alternative = alternative, type = type, B = B)
+    if (NCOL(rY) == 1 & NCOL(rX) == 1 & type == "max") {
+      type <- "quadratic"
+      warning("For one-dimensional X, Y, `type = 'max'` is ignored.")
+    }
+    tst <- .gcm(rY, rX, alternative = alternative, type = type, B = B)
     df <- tst$df
     stat <- tst$stat
     pval <- tst$pval
@@ -198,8 +202,9 @@ gcm <- function(
   dY <- NCOL(rY)
   dX <- NCOL(rX)
   nn <- NROW(rY)
-  RR <- rY * rX
   if (dY > 1 || dX > 1) {
+    RR <- cbind(rY)[, rep(seq_len(dY), each = dX)] *
+      cbind(rX)[, rep(seq_len(dX), dY)]
     if (type == "quadratic") {
       sigma <- crossprod(RR) / nn - tcrossprod(colMeans(RR))
       eig <- eigen(sigma)
@@ -210,7 +215,7 @@ gcm <- function(
         t(eig$vectors)
       tstat <- siginvhalf %*% colSums(RR) / sqrt(nn)
       stat <- sum(tstat^2)
-      pval <- stats::pchisq(stat, df = dX, lower.tail = FALSE)
+      pval <- stats::pchisq(stat, df = dX * dY, lower.tail = FALSE)
     } else {
       tRR <- t(RR)
       mRR <- rowMeans(tRR)
@@ -222,6 +227,7 @@ gcm <- function(
       pval <- (sum(sim >= stat) + 1) / (B + 1)
     }
   } else {
+    RR <- c(rY) * c(rX)
     R.sq <- RR^2
     meanR <- mean(RR)
     stat <- sqrt(nn) * meanR / sqrt(mean(R.sq) - meanR^2)
@@ -232,7 +238,7 @@ gcm <- function(
     )
     stat <- stat^2
   }
-  list("stat" = stat, "pval" = pval, df = dX)
+  list("stat" = stat, "pval" = pval, df = dX * dY)
 }
 
 .rm_int <- function(x) {

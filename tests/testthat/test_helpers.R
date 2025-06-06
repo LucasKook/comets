@@ -117,6 +117,26 @@ test_that("TRAM GCM works with coxph and survforest", {
   ))
 })
 
+test_that("original for tests", {
+  set.seed(12)
+  tn <- 3e2
+  X <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(X) <- c("X1", "X2")
+  Z <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(Z) <- c("Z1", "Z2")
+  Y <- cbind(rowSums(X) + rnorm(tn), rowSums(X) + rnorm(tn))
+  expect_no_error({
+    gcm(Y, X, Z, type = "max", coin = FALSE)
+    gcm(Y, X, Z, type = "quadratic", coin = FALSE)
+    gcm(Y[, 1], X, Z, type = "quadratic", coin = FALSE)
+    gcm(Y[, 1], X, Z, type = "max", coin = FALSE)
+    gcm(Y[, 1], X[, 1], Z, type = "quadratic", coin = FALSE)
+  })
+  expect_warning(
+    gcm(Y[, 1], X[, 1], Z, type = "max", coin = FALSE)
+  )
+})
+
 test_that("coin for tests", {
   expect_no_error({
     library("coin")
@@ -204,8 +224,8 @@ test_that("comet wrapper works", {
     comet(factor(vs) ~ cyl | disp, data = mtcars, test = "pcm")
     comet(mpg ~ cyl | disp, data = mtcars, test = "wgcm")
     comet(factor(vs) ~ cyl | disp, data = mtcars, test = "wgcm")
-    comet(factor(mpg) ~ cyl | disp, data = mtcars)
-    comet(ordered(mpg) ~ cyl | disp, data = mtcars)
+    comet(factor(cyl) ~ mpg | disp, data = mtcars)
+    comet(ordered(cyl) ~ mpg | disp, data = mtcars)
     comet(cbind(mpg, vs) ~ cyl | disp, data = mtcars)
   })
   expect_error({
@@ -297,6 +317,14 @@ test_that("GCM with (tuned) xgboost and rangers works", {
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "xgb", reg_YonZ = "xgb"))
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "tuned_rf", reg_YonZ = "tuned_rf"))
     expect_no_error(gcm(Y, X, Z, reg_XonZ = "lgbm", reg_YonZ = "lgbm"))
+    expect_no_error(gcm(Y, X, Z,
+      reg_XonZ = "rf", reg_YonZ = "tuned_xgb",
+      args_YonZ = list(nfold = 2)
+    ))
+    expect_no_error(gcm(Y, X, Z,
+      reg_XonZ = "rf", reg_YonZ = "tuned_xgb",
+      args_YonZ = list(folds = list(1:50, 51:100))
+    ))
   }
 })
 

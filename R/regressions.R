@@ -366,19 +366,33 @@ xgb <- function(y, x, nrounds = 2L, verbose = 0L, ...) {
 #'     \code{\link[xgboost]{xgboost}}.
 #' @param metrics See \code{\link[xgboost]{xgboost}}.
 #' @param nfold Number of folds for \code{nfold}-cross validation.
-tuned_xgb <- function(y, x, etas = c(0.1, 0.5, 1), max_depths = 1:5,
-                      nfold = 5, nrounds = c(2, 10, 50), verbose = 0,
-                      metrics = list("rmse"), ...) {
+#' @param folds Specify folds for cross validation.
+tuned_xgb <- function(y, x, nfold, folds, etas = c(0.1, 0.5, 1),
+                      max_depths = 1:5, nrounds = c(2, 10, 50),
+                      verbose = 0, metrics = list("rmse"), ...) {
   if (requireNamespace("xgboost")) {
+    args <- list(
+      data = x, label = y, verbose = verbose,
+      metrics = metrics
+    )
+    if (missing(folds) && missing(nfold)) {
+      nfold <- 5
+    }
+    if (!missing(nfold)) {
+      args$nfold <- nfold
+    }
+    if (!missing(folds)) {
+      args$folds <- folds
+    }
     cvres <- lapply(etas, \(teta) {
       lapply(max_depths, \(tmd) {
         lapply(nrounds, \(tnr) {
-          cv <- do.call("xgb.cv", c(list(
-            data = x, label = y, nrounds = tnr,
-            verbose = verbose, eta = teta, max_depth = tmd,
-            metrics = metrics, nfold = nfold
-          ), list(...)))
-          err <- mean(cv$evaluation_log[[paste0("test_", metrics[[1]], "_mean")]])
+          args$nrounds <- tnr
+          args$eta <- teta
+          args$max_depth <- tmd
+          cv <- do.call("xgb.cv", c(args, list(...)))
+          ### Take min over boosting iterations
+          err <- min(cv$evaluation_log[[paste0("test_", metrics[[1]], "_mean")]])
           data.frame(
             nrounds = tnr, eta = teta, max_depth = tmd, error = err
           )
