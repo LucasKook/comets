@@ -15,7 +15,7 @@ gcm(
   args_XonZ = NULL,
   type = c("quadratic", "max", "scalar"),
   B = 499L,
-  coin = TRUE,
+  coin = FALSE,
   cointrol = list(distribution = "asymptotic"),
   return_fitted_models = FALSE,
   multivariate = c("none", "YonZ", "XonZ", "both"),

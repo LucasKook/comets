@@ -71,7 +71,7 @@ gcm <- function(
     Y, X, Z, alternative = c("two.sided", "less", "greater"),
     reg_YonZ = "rf", reg_XonZ = "rf", args_YonZ = NULL,
     args_XonZ = NULL, type = c("quadratic", "max", "scalar"), B = 499L,
-    coin = TRUE, cointrol = list(distribution = "asymptotic"),
+    coin = FALSE, cointrol = list(distribution = "asymptotic"),
     return_fitted_models = FALSE, multivariate = c("none", "YonZ", "XonZ", "both"), ...) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
