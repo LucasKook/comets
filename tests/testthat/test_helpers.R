@@ -224,8 +224,8 @@ test_that("comet wrapper works", {
     comet(factor(vs) ~ cyl | disp, data = mtcars, test = "pcm")
     comet(mpg ~ cyl | disp, data = mtcars, test = "wgcm")
     comet(factor(vs) ~ cyl | disp, data = mtcars, test = "wgcm")
-    comet(factor(mpg) ~ cyl | disp, data = mtcars)
-    comet(ordered(mpg) ~ cyl | disp, data = mtcars)
+    comet(factor(cyl) ~ mpg | disp, data = mtcars)
+    comet(ordered(cyl) ~ mpg | disp, data = mtcars)
     comet(cbind(mpg, vs) ~ cyl | disp, data = mtcars)
   })
   expect_error({
