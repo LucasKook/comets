@@ -95,50 +95,18 @@ gcm <- function(
   rX <- XZ[["residuals"]]
   mX <- XZ[["models"]]
 
-  if (coin) {
-    tst <- do.call("independence_test", c(list(
-      rY ~ rX,
-      alternative = alternative, teststat = type
-    ), cointrol))
-    df <- NCOL(rY) * NCOL(rX)
-    stat <- coin::statistic(tst)
-    pval <- coin::pvalue(tst)
-  } else {
-    if (NCOL(rY) == 1 & NCOL(rX) == 1 & type == "max") {
-      type <- "quadratic"
-      warning("For one-dimensional X, Y, `type = 'max'` is ignored.")
-    }
-    tst <- .gcm(rY, rX, alternative = alternative, type = type, B = B)
-    df <- tst$df
-    stat <- tst$stat
-    pval <- tst$pval
-  }
+  ret <- do.call("rgcm", args = c(
+    list(rY = rY, rX = rX, alternative = alternative, type = type, B = B), cointrol
+  ))
+  ret$data.name <- paste0(deparse(match.call()), collapse = "\n")
 
-  tname <- "X-squared"
-  par <- c("df" = df)
-  if (type == "max") {
-    tname <- "maxT"
-    par <- NULL
-  } else if (type == "scalar") {
-    tname <- "Z"
-    par <- NULL
-  }
-  names(stat) <- tname
-
-  models <- if (return_fitted_models) {
+  ret$models <- if (return_fitted_models) {
     list(reg_YonZ = mY, reg_XonZ = mX)
   } else {
     NULL
   }
 
-  structure(list(
-    statistic = stat, p.value = pval, parameter = par,
-    hypothesis = c("E[cov(Y, X | Z)]" = "0"),
-    null.value = c("E[cov(Y, X | Z)]" = "0"), alternative = alternative,
-    method = paste0("Generalized covariance measure test"),
-    data.name = deparse(match.call(), width.cutoff = 80),
-    rY = rY, rX = rX, models = models
-  ), class = c("gcm", "htest"))
+  ret
 }
 
 # Helpers -----------------------------------------------------------------
@@ -238,7 +206,7 @@ gcm <- function(
     )
     stat <- stat^2
   }
-  list("stat" = stat, "pval" = pval, df = dX * dY)
+  list("stat" = stat, "pval" = pval, "df" = dX * dY)
 }
 
 .rm_int <- function(x) {
@@ -315,14 +283,7 @@ plot.gcm <- function(x, plot = TRUE, ...) {
 #'
 #' @param rY Vector or matrix of response values.
 #' @param rX Matrix or data.frame of covariates.
-#' @param type Type of test statistic, either \code{"quadratic"} (default) or
-#'     \code{"max"}. If \code{"max"} is specified, the p-value is computed
-#'     based on a bootstrap approximation of the null distribution with
-#'     \code{B} samples.
-#' @param alternative A character string specifying the alternative hypothesis,
-#'     must be one of \code{"two.sided"} (default), \code{"greater"} or
-#'     \code{"less"}. Only applies if \code{type = "quadratic"} and \code{Y} and
-#'     \code{X} are one-dimensional.
+#' @inheritParams gcm
 #' @param ... Further arguments passed to \code{\link[coin]{independence_test}()}.
 #'
 #' @returns Object of class '\code{gcm}' and '\code{htest}' with the following
@@ -339,31 +300,36 @@ plot.gcm <- function(x, plot = TRUE, ...) {
 #' \item{\code{rX}}{Residuals for the X on Z regression.}
 #' @export
 rgcm <- function(
-    rY, rX, alternative = "two.sided",
+    rY, rX, alternative = "two.sided", coin = FALSE, B = 499L,
     type = c("quadratic", "max", "scalar"), ...) {
   type <- match.arg(type)
-  tst <- coin::independence_test(rY ~ rX,
-    alternative = alternative, teststat = type, ...
-  )
-  df <- NULL
-  switch(type,
-    "scalar" = {
-      stat <- c("Z" = coin::statistic(tst))
-    },
-    "quadratic" = {
-      stat <- c("X-squared" = coin::statistic(tst))
+  if (coin) {
+    tst <- coin::independence_test(rY ~ rX,
+      alternative = alternative, teststat = type, ...
+    )
+    df <- NULL
+    stat <- coin::statistic(tst)
+    if (type == "quadratic") {
       df <- tst@statistic@df
-    },
-    "max" = {
-      stat <- c("maxT" = coin::statistic(tst))
     }
+    pval <- coin::pvalue(tst)
+  } else {
+    tst <- .gcm(rY, rX, alternative = alternative, type = type, B = B)
+    stat <- tst$stat
+    df <- tst$df
+    pval <- tst$pval
+  }
+  names(stat) <- switch(type,
+    "scalar" = "Z",
+    "quadratic" = "X-squared",
+    "max" = "maxT"
   )
   structure(list(
-    statistic = stat, p.value = coin::pvalue(tst), parameter = df,
+    statistic = stat, p.value = pval, parameter = df,
     hypothesis = c("E[cov(Y, X | Z)]" = "0"),
     null.value = c("E[cov(Y, X | Z)]" = "0"), alternative = alternative,
     method = paste0("Generalized covariance measure test"),
     data.name = paste0(deparse(match.call()), collapse = "\n"),
     rY = rY, rX = rX
-  ), class = c("gcm", "htest"))
+  ), class = c("gcm", "htest"), test = tst)
 }

@@ -42,7 +42,7 @@ $Y$ on $Z$ and $X$ on $Z$ regressions can be investigated by calling `plot(GCM)`
 ## 	Generalized covariance measure test
 ## 
 ## data:  gcm(Y = Y, X = X, Z = Z)
-## X-squared = 3.6131, df = 2, p-value = 0.1642
+## X-squared = 2.8211, df = 2, p-value = 0.244
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
@@ -82,7 +82,7 @@ comet(Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
 ## 	Generalized covariance measure test
 ## 
 ## data:  comet(formula = Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
-## X-squared = 3.5, df = 2, p-value = 0.1738
+## X-squared = 3.2184, df = 2, p-value = 0.2
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 

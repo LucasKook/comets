@@ -8,7 +8,7 @@ test_that("gcm pcm data types", {
     gcm1 <- gcm(Y, X, Z)
     pcm1 <- pcm(Y, X, Z)
     gcm2 <- gcm(Y, cbind(X, rnorm(tn)), cbind(Z, rnorm(tn)))
-    gcm2 <- gcm(Y, as.data.frame(X), as.data.frame(Z))
+    gcm3 <- gcm(Y, as.data.frame(X), as.data.frame(Z))
   })
 })
 
@@ -132,9 +132,6 @@ test_that("original for tests", {
     gcm(Y[, 1], X, Z, type = "max", coin = FALSE)
     gcm(Y[, 1], X[, 1], Z, type = "quadratic", coin = FALSE)
   })
-  expect_warning(
-    gcm(Y[, 1], X[, 1], Z, type = "max", coin = FALSE)
-  )
 })
 
 test_that("coin for tests", {
@@ -242,11 +239,16 @@ test_that("residual gcm works", {
     rY <- rnorm(100)
     rX <- rnorm(100)
     rX2 <- rnorm(100)
-    rgcm(rY, rX, type = "quadratic")
-    rgcm(rY, rX, type = "max")
-    rgcm(rY, rX, type = "scalar")
-    rgcm(rY, cbind(rX, rX2), type = "quadratic")
-    rgcm(cbind(rY, rX2), rX, type = "max")
+    rgcm(rY, rX, type = "quadratic", coin = FALSE)
+    rgcm(rY, rX, type = "max", coin = FALSE)
+    rgcm(rY, rX, type = "scalar", coin = FALSE)
+    rgcm(rY, cbind(rX, rX2), type = "quadratic", coin = FALSE)
+    rgcm(cbind(rY, rX2), rX, type = "max", coin = FALSE)
+    rgcm(rY, rX, type = "quadratic", coin = TRUE)
+    rgcm(rY, rX, type = "max", coin = TRUE)
+    rgcm(rY, rX, type = "scalar", coin = TRUE)
+    rgcm(rY, cbind(rX, rX2), type = "quadratic", coin = TRUE)
+    rgcm(cbind(rY, rX2), rX, type = "max", coin = TRUE)
   })
 })
 
