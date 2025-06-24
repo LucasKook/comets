@@ -8,6 +8,8 @@ rgcm(
   rY,
   rX,
   alternative = "two.sided",
+  coin = FALSE,
+  B = 499L,
   type = c("quadratic", "max", "scalar"),
   ...
 )
@@ -21,6 +23,14 @@ rgcm(
 must be one of \code{"two.sided"} (default), \code{"greater"} or
 \code{"less"}. Only applies if \code{type = "quadratic"} and \code{Y} and
 \code{X} are one-dimensional.}
+
+\item{coin}{Logical; whether or not to use the \code{coin} package for
+computing the test statistic and p-value. The \code{coin} package
+computes variances with n - 1 degrees of freedom.
+The default is \code{TRUE}.}
+
+\item{B}{Number of bootstrap samples. Only applies if \code{type = "max"} is
+used.}
 
 \item{type}{Type of test statistic, either \code{"quadratic"} (default) or
 \code{"max"}. If \code{"max"} is specified, the p-value is computed
