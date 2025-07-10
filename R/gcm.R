@@ -206,7 +206,7 @@ gcm <- function(
     )
     stat <- stat^2
   }
-  list("stat" = stat, "pval" = pval, "df" = dX * dY)
+  list("stat" = stat, "pval" = pval, "df" = c("df" = dX * dY))
 }
 
 .rm_int <- function(x) {
@@ -310,7 +310,7 @@ rgcm <- function(
     df <- NULL
     stat <- coin::statistic(tst)
     if (type == "quadratic") {
-      df <- tst@statistic@df
+      df <- c("df" = tst@statistic@df)
     }
     pval <- coin::pvalue(tst)
   } else {
