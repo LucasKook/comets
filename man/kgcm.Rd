@@ -14,7 +14,7 @@ kgcm(
   args_XonZ = NULL,
   B = 499L,
   return_fitted_models = FALSE,
-  multivariate = c("none", "YonZ", "XonZ", "both"),
+  multivariate = c("none", "XonZ"),
   bandwidth = NULL,
   ...
 )
@@ -42,9 +42,9 @@ X on Z. See \code{?\link[comets]{regressions}} for more detail.}
 (default is \code{FALSE}).}
 
 \item{multivariate}{Character; specifying which regression can handle
-multivariate outcomes (\code{"none"}, \code{"YonZ"}, \code{"XonZ"}, or
-\code{"both"}). If \code{"none"}, then the regression is run using each
-column in Y (or X) as the response.}
+multivariate outcomes (\code{"none"}, or \code{"XonZ"}).
+If \code{"none"}, then the regression is run using each column in X as
+the response.}
 
 \item{bandwidth}{Numeric; value of the bandwidth for the Gaussian kernel.
 Defaults to \code{NULL}, corresponding to the median heuristic.}

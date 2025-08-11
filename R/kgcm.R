@@ -19,9 +19,9 @@
 #' @param args_XonZ A list of named arguments passed to \code{reg_XonZ}.
 #' @param B Number of wild bootstrap samples.
 #' @param multivariate Character; specifying which regression can handle
-#'     multivariate outcomes (\code{"none"}, \code{"YonZ"}, \code{"XonZ"}, or
-#'     \code{"both"}). If \code{"none"}, then the regression is run using each
-#'     column in Y (or X) as the response.
+#'     multivariate outcomes (\code{"none"}, or \code{"XonZ"}).
+#'     If \code{"none"}, then the regression is run using each column in X as
+#'     the response.
 #' @param return_fitted_models Logical; whether to return the fitted regressions
 #'     (default is \code{FALSE}).
 #' @param bandwidth Numeric; value of the bandwidth for the Gaussian kernel.
@@ -58,24 +58,17 @@
 kgcm <- function(
     Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", args_YonZ = NULL,
     args_XonZ = NULL, B = 499L, return_fitted_models = FALSE,
-    multivariate = c("none", "YonZ", "XonZ", "both"),
+    multivariate = c("none", "XonZ"),
     bandwidth = NULL, ...) {
   Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
   multivariate <- match.arg(multivariate)
-  mvYonZ <- multivariate %in% c("YonZ", "both")
   mvXonZ <- multivariate %in% c("XonZ", "both")
   args <- if (length(list(...)) > 0) list(...) else NULL
   args <- c(args_YonZ, args)
-  if ("matrix" %in% class(Y)) {
-    YZ <- .multi_regression(Y, Z, reg_YonZ, args, return_fitted_models, mvYonZ)
-    rY <- YZ[["residuals"]]
-    mY <- YZ[["models"]]
-  } else {
-    mY <- do.call(reg_YonZ, c(list(y = Y, x = Z), args))
-    rY <- stats::residuals(mY, response = Y, data = Z)
-  }
+  mY <- do.call(reg_YonZ, c(list(y = Y, x = Z), args))
+  rY <- stats::residuals(mY, response = Y, data = Z)
   XZ <- .multi_regression(X, Z, reg_XonZ, args_XonZ, return_fitted_models, mvXonZ)
   rX <- XZ[["residuals"]]
   mX <- XZ[["models"]]
