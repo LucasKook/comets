@@ -15,20 +15,23 @@ library("comets")
 
 # Covariance Measure Tests (COMETs) in R <img src='inst/comets-pkg.png' align="right" height="138.5" />
 
-The Generalised [1] and Projected [2] Covariance Measure tests (GCM, PCM) can be
+The Generalised [1], Projected [2], weighted generalised [3], kernel
+generalised [4] Covariance Measure tests (GCM, PCM, wGCM, kGCM tests) can be
 used to test conditional independence between a real-valued response $Y$ and
 features/modalities $X$ given additional features/modalities $Z$ using any
-sufficiently predictive supervised learning algorithms. The `comets` R package
-implements these covariance measure tests (COMETs) with a user-friendly
-interface which allows the user to use any sufficiently predictive supervised
-learning algorithm of their choosing. The default is to use random forests
-implemented in `ranger` for all regressions. A Python version of this package
-is available [here](https://github.com/shimenghuang/pycomets).
+sufficiently predictive supervised learning algorithms. An extension of the GCM
+to censored responses was proposed in [5] and is implemented with survival
+regression methods. The `comets` R package implements these covariance measure
+tests (COMETs) with a user-friendly interface which allows the user to use any
+sufficiently predictive supervised learning algorithm of their choosing. The
+default is to use random forests implemented in `ranger` for all regressions. A
+Python version of this package is available
+[here](https://github.com/shimenghuang/pycomets).
 
 Here, we showcase how to use `comets` with a simple example in which $Y$ is not
 independent of $X$ given $Z$. More elaborate examples including conditional
 variable significance testing and modality selection on real-world data can be
-found in [3].
+found in [6].
 
 ```{r}
 set.seed(1)
@@ -150,7 +153,19 @@ Projected Covariance Measure for assumption-lean variable significance testing.
 The Annals of Statistics, 52(6), 2851-2878.
 [doi:10.1214/24-AOS2447](https://doi.org/10.1214/24-AOS2447)
 
-[3] Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance
+[3] Scheidegger, C., Hörrmann, J., & Bühlmann, P. (2022). The weighted
+generalised covariance measure. Journal of Machine Learning Research, 23(273),
+1-68.
+
+[4] Fernández, T., & Rivera, N. (2024). A general framework for the analysis of
+kernel-based tests. Journal of Machine Learning Research, 25(95), 1-40.
+
+[5] Kook, L., Saengkyongam, S., Lundborg, A. R., Hothorn, T., & Peters, J.
+(2025). Model-based causal feature selection for general response types.
+Journal of the American Statistical Association, 120(550), 1090-1101.
+[doi:10.1080/01621459.2024.2395588](https://doi.org/10.1080/01621459.2024.2395588)
+
+[6] Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance
 testing in supervised learning with multimodal data. 
 Briefings in Bioinformatics 25(6) 2024. 
 [doi:10.1093/bib/bbae475](https://doi.org/10.1093/bib/bbae475)
