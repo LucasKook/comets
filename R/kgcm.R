@@ -1,4 +1,4 @@
-#' Kernelized generalised covariance measure test
+#' Kernel generalised covariance measure test
 #'
 #' @details
 #' The kernelized generalised covariance measure test tests whether the weighted
@@ -100,7 +100,7 @@ kgcm <- function(
     statistic = c("Psi" = obs), p.value = pval, parameter = NULL,
     hypothesis = c("E[w(Z) cov(Y, X | Z)]" = "0"),
     null.value = c("E[w(Z) cov(Y, X | Z)]" = "0"), alternative = "two.sided",
-    method = paste0("Kernelized generalized covariance measure test"),
+    method = paste0("Kernel generalized covariance measure test"),
     data.name = paste0(deparse(match.call()), collapse = "\n"),
     rY = rY, rX = rX, K = K, models = models
   ), class = c("kgcm", "htest"))

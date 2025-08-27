@@ -2,7 +2,7 @@
 % Please edit documentation in R/kgcm.R
 \name{kgcm}
 \alias{kgcm}
-\title{Kernelized generalised covariance measure test}
+\title{Kernel generalised covariance measure test}
 \usage{
 kgcm(
   Y,
@@ -67,7 +67,7 @@ components:
 \item{\code{models}}{List of fitted regressions if \code{return_fitted_models} is \code{TRUE}.}
 }
 \description{
-Kernelized generalised covariance measure test
+Kernel generalised covariance measure test
 }
 \details{
 The kernelized generalised covariance measure test tests whether the weighted
