@@ -39,6 +39,22 @@ test_that("wGCM with different regressions", {
   })
 })
 
+test_that("kGCM works", {
+  expect_no_error({
+    set.seed(12)
+    tn <- 1e2
+    gamma <- 0.5
+    # Same setup as simulation in original kgcm paper
+    Z <- rnorm(tn)
+    X <- Z + (U1 <- rnorm(tn)) * sin(5 * Z)
+    Y <- Z^2 + gamma * U1 + (1 - gamma) * rnorm(tn)
+    kgcm1 <- kgcm(Y, X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm")
+    kgcm2 <- kgcm(Y, X, Z, bandwidth = 0.1)
+    kgcm3 <- kgcm(Y, X, Z, bandwidth = 0.1, B = 999)
+    tmp <- plot(kgcm3, plot = FALSE)
+  })
+})
+
 test_that("GCM with different regressions", {
   expect_no_error({
     set.seed(12)

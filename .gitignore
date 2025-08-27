@@ -13,3 +13,5 @@ mimic
 *.rds
 *.sh
 Makefile
+*.o
+*.so
