@@ -96,7 +96,10 @@ gcm <- function(
   mX <- XZ[["models"]]
 
   ret <- do.call("rgcm", args = c(
-    list(rY = rY, rX = rX, alternative = alternative, type = type, B = B), cointrol
+    list(
+      rY = rY, rX = rX, alternative = alternative, coin = coin,
+      B = B, type = type
+    ), cointrol
   ))
   ret$data.name <- paste0(deparse(match.call()), collapse = "\n")
 

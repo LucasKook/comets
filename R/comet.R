@@ -12,11 +12,13 @@
 #' @param formula Formula of the form \code{Y ~ X | Z} for testing Y independent
 #'     of X given Z.
 #' @param data Data.frame containing the variables in \code{formula}.
-#' @param test Character string; \code{"gcm"}, \code{"pcm"}, or \code{"wgcm"}.
+#' @param test Character string; \code{"gcm"}, \code{"pcm"}, \code{"wgcm"}, or
+#'    \code{"kgcm"}.
 #' @param ... Additional arguments passed to \code{test}.
 #'
-#' @return Object of class \code{"gcm"}, \code{"wgcm"} or \code{"pcm"} and
-#'     \code{"htest"}. See \code{\link{gcm}} and \code{\link{pcm}} for details.
+#' @return Object of class \code{"gcm"}, \code{"wgcm"}, \code{"kgcm"}, or
+#'     \code{"pcm"} and \code{"htest"}. See \code{\link{gcm}}, \code{\link{wgcm}},
+#'     \code{\link{kgcm}}, \code{\link{pcm}} for details.
 #'
 #' @examples
 #' tn <- 1e2
@@ -24,7 +26,7 @@
 #' comet(y ~ x1 + x2 | z, data = df, test = "gcm")
 #'
 #' @export
-comet <- function(formula, data, test = c("gcm", "pcm", "wgcm"), ...) {
+comet <- function(formula, data, test = c("gcm", "pcm", "wgcm", "kgcm"), ...) {
   fm <- Formula::as.Formula(formula)
   Y <- stats::model.response(stats::model.frame(fm, data))
   X <- .rm_int(stats::model.matrix(fm, data, rhs = 1))
