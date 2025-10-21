@@ -173,31 +173,18 @@ gcm <- function(
   dY <- NCOL(rY)
   dX <- NCOL(rX)
   nn <- NROW(rY)
-  if (dY > 1 || dX > 1) {
+  if (type == "max") {
     RR <- cbind(rY)[, rep(seq_len(dY), each = dX)] *
       cbind(rX)[, rep(seq_len(dX), dY)]
-    if (type == "quadratic") {
-      sigma <- crossprod(RR) / nn - tcrossprod(colMeans(RR))
-      eig <- eigen(sigma)
-      if (min(eig$values) < .Machine$double.eps) {
-        warning("`vcov` of test statistic is not invertible")
-      }
-      siginvhalf <- eig$vectors %*% diag(eig$values^(-1 / 2)) %*%
-        t(eig$vectors)
-      tstat <- siginvhalf %*% colSums(RR) / sqrt(nn)
-      stat <- sum(tstat^2)
-      pval <- stats::pchisq(stat, df = dX * dY, lower.tail = FALSE)
-    } else {
-      tRR <- t(RR)
-      mRR <- rowMeans(tRR)
-      tRR <- tRR / sqrt((rowMeans(tRR^2) - mRR^2))
-      stat <- max(abs(mRR)) * sqrt(nn)
-      sim <- apply(abs(tRR %*% matrix(
-        stats::rnorm(nn * B), nn, B
-      )), 2, max) / sqrt(nn)
-      pval <- (sum(sim >= stat) + 1) / (B + 1)
-    }
-  } else {
+    tRR <- t(RR)
+    mRR <- rowMeans(tRR)
+    tRR <- tRR / sqrt((rowMeans(tRR^2) - mRR^2))
+    stat <- max(abs(mRR)) * sqrt(nn)
+    sim <- apply(abs(tRR %*% matrix(
+      stats::rnorm(nn * B), nn, B
+    )), 2, max) / sqrt(nn)
+    pval <- (sum(sim >= stat) + 1) / (B + 1)
+  } else if (dY == 1 && dX == 1) {
     RR <- c(rY) * c(rX)
     R.sq <- RR^2
     meanR <- mean(RR)
@@ -208,6 +195,19 @@ gcm <- function(
       "less" = stats::pnorm(stat)
     )
     stat <- stat^2
+  } else {
+    RR <- cbind(rY)[, rep(seq_len(dY), each = dX)] *
+      cbind(rX)[, rep(seq_len(dX), dY)]
+    sigma <- crossprod(RR) / nn - tcrossprod(colMeans(RR))
+    eig <- eigen(sigma)
+    if (min(eig$values) < .Machine$double.eps) {
+      warning("`vcov` of test statistic is not invertible")
+    }
+    siginvhalf <- eig$vectors %*% diag(eig$values^(-1 / 2)) %*%
+      t(eig$vectors)
+    tstat <- siginvhalf %*% colSums(RR) / sqrt(nn)
+    stat <- sum(tstat^2)
+    pval <- stats::pchisq(stat, df = dX * dY, lower.tail = FALSE)
   }
   list("stat" = stat, "pval" = pval, "df" = c("df" = dX * dY))
 }

@@ -147,6 +147,7 @@ test_that("original for tests", {
     gcm(Y[, 1], X, Z, type = "quadratic", coin = FALSE)
     gcm(Y[, 1], X, Z, type = "max", coin = FALSE)
     gcm(Y[, 1], X[, 1], Z, type = "quadratic", coin = FALSE)
+    gcm(Y[, 1], X[, 1], Z, type = "max", coin = FALSE)
   })
 })
 
