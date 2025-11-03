@@ -71,23 +71,25 @@ conditional independence in this example.
 
 The `comets` package contains an alternative formula-based interface, in which
 $H_0 : Y \perp\hspace{-5pt}\perp X \mid Z$ can be supplied as `Y ~ X | Z` with a
-corresponding `data` argument. This interface is implemented in `comet()` and
+corresponding `data` argument. This interface is implemented in `comets()` and
 shown below.
 
 
 ```r
 dat <- data.frame(Y = Y, X, Z)
-comet(Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
+comets(Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
 ```
 
 ```
 ## 
 ## 	Generalized covariance measure test
 ## 
-## data:  comet(formula = Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
+## data:  comets(formula = Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
 ## X-squared = 3.2184, df = 2, p-value = 0.2
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
+
+# Specifying regression methods
 
 Different regression methods can supplied for both GCM and PCM tests using the
 `reg_*` arguments (for instance, `reg_YonZ` in `gcm()` for the regression of $Y$
@@ -114,6 +116,68 @@ residuals.my_regression <- function(object, response, data, ...) {
 
 The input `y` and `x` and `data` are vector and matrix-valued. The output of
 `predict.my_regression()` should be a vector of length `NROW(data)`.
+
+# Usage example: Survival response
+
+For survival responses, `comets` offers the TRAM-GCM test [5] and supports
+parametric and semiparametric survival models from the `survival` package, as
+well as random survival forests from `ranger`. As an example, we test whether
+survival is independent of sex given age in the `cancer` dataset, once using a
+Cox model and once using a random survival forest. Both tests agree to reject
+the null hypothesis at conventional significance levels.
+
+
+```r
+library("survival")
+data("cancer", package = "survival")
+cancer$surv <- with(cancer, Surv(time, status == 2))
+comets(surv ~ sex | age, data = cancer, reg_YonZ = "cox")
+```
+
+```
+## 
+## 	Generalized covariance measure test
+## 
+## data:  comets(formula = surv ~ sex | age, data = cancer, reg_YonZ = "cox")
+## X-squared = 7.7608, df = 1, p-value = 0.005339
+## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
+```
+
+```r
+comets(surv ~ sex | age, data = cancer, reg_YonZ = "survforest")
+```
+
+```
+## 
+## 	Generalized covariance measure test
+## 
+## data:  comets(formula = surv ~ sex | age, data = cancer, reg_YonZ = "survforest")
+## X-squared = 14.827, df = 1, p-value = 0.0001178
+## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
+```
+
+# Usage example: Multivariate response
+
+The GCM test also supports multivariate responses. Continuing the example from
+above, we generate a bivariate response $Y$. Internally, since $Y$ and $X$ are
+both two dimensional, four random forest regressions are performed. Advanced
+usage with the `multivariate` argument also allows the specification of
+multivariate regression models (this option is experimental). 
+
+
+```r
+bivY <- cbind(Y, 0.5 * X[, 1] + Z[, 1] + rnorm(n))
+gcm(bivY, X, Z)
+```
+
+```
+## 
+## 	Generalized covariance measure test
+## 
+## data:  gcm(Y = bivY, X = X, Z = Z)
+## X-squared = 42.177, df = 4, p-value = 1.533e-08
+## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
+```
 
 # Installation
 

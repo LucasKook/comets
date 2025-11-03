@@ -2,12 +2,20 @@
 #'
 #' @details
 #' The generalised covariance measure test tests whether the conditional
-#' covariance of Y and X given Z is zero.
+#' covariance of Y and X given Z is zero. This implementation also supports the
+#' TRAM-GCM test for survival responses, which tests whether the expected
+#' conditional covariance between the score residuals of a Y on Z regression
+#' and X is zero.
 #'
 #' @references
 #' Rajen D. Shah, Jonas Peters "The hardness of conditional independence testing
 #' and the generalised covariance measure," The Annals of Statistics, 48(3),
 #' 1514-1538. \doi{10.1214/19-aos1857}
+#'
+#' Kook, L., Saengkyongam, S., Lundborg, A. R., Hothorn, T., & Peters, J.
+#' (2025). Model-based causal feature selection for general response types.
+#' Journal of the American Statistical Association, 120(550), 1090-1101.
+#' \doi{10.1080/01621459.2024.2395588}
 #'
 #' @param Y Vector or matrix of response values.
 #' @param X Matrix or data.frame of covariates.
@@ -173,31 +181,18 @@ gcm <- function(
   dY <- NCOL(rY)
   dX <- NCOL(rX)
   nn <- NROW(rY)
-  if (dY > 1 || dX > 1) {
+  if (type == "max") {
     RR <- cbind(rY)[, rep(seq_len(dY), each = dX)] *
       cbind(rX)[, rep(seq_len(dX), dY)]
-    if (type == "quadratic") {
-      sigma <- crossprod(RR) / nn - tcrossprod(colMeans(RR))
-      eig <- eigen(sigma)
-      if (min(eig$values) < .Machine$double.eps) {
-        warning("`vcov` of test statistic is not invertible")
-      }
-      siginvhalf <- eig$vectors %*% diag(eig$values^(-1 / 2)) %*%
-        t(eig$vectors)
-      tstat <- siginvhalf %*% colSums(RR) / sqrt(nn)
-      stat <- sum(tstat^2)
-      pval <- stats::pchisq(stat, df = dX * dY, lower.tail = FALSE)
-    } else {
-      tRR <- t(RR)
-      mRR <- rowMeans(tRR)
-      tRR <- tRR / sqrt((rowMeans(tRR^2) - mRR^2))
-      stat <- max(abs(mRR)) * sqrt(nn)
-      sim <- apply(abs(tRR %*% matrix(
-        stats::rnorm(nn * B), nn, B
-      )), 2, max) / sqrt(nn)
-      pval <- (sum(sim >= stat) + 1) / (B + 1)
-    }
-  } else {
+    tRR <- t(RR)
+    mRR <- rowMeans(tRR)
+    tRR <- tRR / sqrt((rowMeans(tRR^2) - mRR^2))
+    stat <- max(abs(mRR)) * sqrt(nn)
+    sim <- apply(abs(tRR %*% matrix(
+      stats::rnorm(nn * B), nn, B
+    )), 2, max) / sqrt(nn)
+    pval <- (sum(sim >= stat) + 1) / (B + 1)
+  } else if (dY == 1 && dX == 1) {
     RR <- c(rY) * c(rX)
     R.sq <- RR^2
     meanR <- mean(RR)
@@ -208,6 +203,19 @@ gcm <- function(
       "less" = stats::pnorm(stat)
     )
     stat <- stat^2
+  } else {
+    RR <- cbind(rY)[, rep(seq_len(dY), each = dX)] *
+      cbind(rX)[, rep(seq_len(dX), dY)]
+    sigma <- crossprod(RR) / nn - tcrossprod(colMeans(RR))
+    eig <- eigen(sigma)
+    if (min(eig$values) < .Machine$double.eps) {
+      warning("`vcov` of test statistic is not invertible")
+    }
+    siginvhalf <- eig$vectors %*% diag(eig$values^(-1 / 2)) %*%
+      t(eig$vectors)
+    tstat <- siginvhalf %*% colSums(RR) / sqrt(nn)
+    stat <- sum(tstat^2)
+    pval <- stats::pchisq(stat, df = dX * dY, lower.tail = FALSE)
   }
   list("stat" = stat, "pval" = pval, "df" = c("df" = dX * dY))
 }

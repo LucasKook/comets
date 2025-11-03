@@ -127,7 +127,8 @@ Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 
 }
 \references{
-Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2022). The
+Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2024). The
 Projected Covariance Measure for assumption-lean variable significance
-testing. arXiv preprint. \doi{10.48550/arXiv.2211.02039}
+testing. The Annals of Statistics, 52(6), 2851-2878.
+\doi{10.1214/19-aos1857}
 }
