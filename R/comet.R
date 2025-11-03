@@ -1,8 +1,14 @@
 #' Covariance measure tests with formula interface
 #'
 #' @details
-#' Formula-based interface for the generalised and projected covariance measure
-#' tests.
+#' Formula-based interface for the generalised (GCM), projected (PCM), weighted
+#' (wGCM), kernel generalised (kGCM) and transformation model generalised
+#' (tram-GCM) covariance measure tests (COMETs). All of these COMETs are
+#' algorithm-agnostic and doubly robust tests of conditional independence, that
+#' is for the null hypothesis that X is independent of Y given Z. In the
+#' \code{formula} argument, this can be specified as \code{Y ~ X | Z}. The GCM
+#' test supports multivariate X, Y, and Z, while the PCM, wGCM, and kGCM
+#' require a one-dimensional Y.
 #'
 #' @references
 #' Kook, L. & Lundborg A. R. (2024). Algorithm-agnostic significance testing in
@@ -10,11 +16,15 @@
 #' 25(6), 2024. \doi{10.1093/bib/bbae475}
 #'
 #' @param formula Formula of the form \code{Y ~ X | Z} for testing Y independent
-#'     of X given Z.
-#' @param data Data.frame containing the variables in \code{formula}.
+#'     of X given Z. To specify a multivariate response, \code{cbind(Y1, Y2)}
+#'     can be used on the left-hand side of the formula.
+#' @param data A \code{data.frame} containing the variables in \code{formula}.
 #' @param test Character string; \code{"gcm"}, \code{"pcm"}, \code{"wgcm"}, or
 #'    \code{"kgcm"}.
-#' @param ... Additional arguments passed to \code{test}.
+#' @param ... Additional arguments passed to \code{test}, which includes the
+#'     regression methods that are specific to \code{test}. For the GCM test,
+#'     this includes \code{reg_YonZ} and \code{reg_XonZ} with their respective
+#'     lists of arguments \code{args_YonZ} and \code{args_XonZ}.
 #'
 #' @return Object of class \code{"gcm"}, \code{"wgcm"}, \code{"kgcm"}, or
 #'     \code{"pcm"} and \code{"htest"}. See \code{\link{gcm}}, \code{\link{wgcm}},

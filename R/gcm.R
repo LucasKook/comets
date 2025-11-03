@@ -2,12 +2,20 @@
 #'
 #' @details
 #' The generalised covariance measure test tests whether the conditional
-#' covariance of Y and X given Z is zero.
+#' covariance of Y and X given Z is zero. This implementation also supports the
+#' TRAM-GCM test for survival responses, which tests whether the expected
+#' conditional covariance between the score residuals of a Y on Z regression
+#' and X is zero.
 #'
 #' @references
 #' Rajen D. Shah, Jonas Peters "The hardness of conditional independence testing
 #' and the generalised covariance measure," The Annals of Statistics, 48(3),
 #' 1514-1538. \doi{10.1214/19-aos1857}
+#'
+#' Kook, L., Saengkyongam, S., Lundborg, A. R., Hothorn, T., & Peters, J.
+#' (2025). Model-based causal feature selection for general response types.
+#' Journal of the American Statistical Association, 120(550), 1090-1101.
+#' \doi{10.1080/01621459.2024.2395588}
 #'
 #' @param Y Vector or matrix of response values.
 #' @param X Matrix or data.frame of covariates.
