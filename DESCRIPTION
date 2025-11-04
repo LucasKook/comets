@@ -1,7 +1,7 @@
 Package: comets
 Type: Package
 Title: Covariance Measure Tests for Conditional Independence
-Version: 0.2-1
+Version: 0.2-2
 Authors@R: c(person("Lucas", "Kook", email = "lucasheinrich.kook@gmail.com",
     role = c("aut", "cre"), comment = c(ORCID = "0000-0002-7546-7356")),
     person("Anton Rask", "Lundborg", role = "ctb"))
