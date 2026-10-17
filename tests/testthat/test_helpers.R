@@ -312,6 +312,92 @@ test_that("rf works with different response types", {
   })
 })
 
+test_that("rf residuals for ordered responses work", {
+  set.seed(12)
+  tn <- 2e2
+  z <- rnorm(tn)
+  x <- matrix(z, dimnames = list(NULL, "z"))
+  y <- cut(z + rlogis(tn), c(-Inf, -1, 0, 1.5, Inf), ordered_result = TRUE)
+  ### Closed form score residual agrees with MASS::polr
+  if (requireNamespace("MASS") && requireNamespace("sandwich")) {
+    m <- MASS::polr(y ~ z)
+    sc <- sandwich::estfun(m)
+    r_polr <- -unname(rowSums(sc[, names(m$zeta)]))
+    expect_equal(.ordinal_residuals(y, stats::fitted(m), "score"), r_polr)
+  }
+  ### Dimensions and mean zero
+  m <- rf(y, x)
+  expect_equal(dim(residuals(m, response = y, data = x)), c(tn, 3L))
+  for (type in c("mean", "score")) {
+    m <- rf(y, x, ordinal_residuals = type)
+    r <- residuals(m, response = y, data = x)
+    expect_length(r, tn)
+    expect_lt(abs(mean(r)), 0.1)
+    m <- tuned_rf(y, x, ordinal_residuals = type, max.depths = 1:2)
+    expect_length(residuals(m, response = y, data = x), tn)
+  }
+  ### Score residuals are bounded, and mean residuals use integer scores
+  probs <- matrix(c(0.2, 0.3, 0.5), nrow = 3, ncol = 3, byrow = TRUE)
+  yy <- ordered(1:3)
+  expect_equal(.ordinal_residuals(yy, probs, "score"), c(-0.8, -0.3, 0.5))
+  expect_equal(.ordinal_residuals(yy, probs, "mean"), 1:3 - 2.3)
+  ### Binary ordered responses are unaffected
+  yb <- ordered(as.numeric(y) > 2)
+  expect_equal(
+    residuals(rf(yb, x, ordinal_residuals = "score", seed = 1),
+      response = yb, data = x
+    ),
+    residuals(rf(yb, x, seed = 1), response = yb, data = x)
+  )
+  ### Usage through comet()
+  dat <- data.frame(y = y, z = z, x = rnorm(tn))
+  for (type in c("probability", "mean", "score")) {
+    expect_no_error(tst <- comet(y ~ x | z,
+      data = dat,
+      args_YonZ = list(ordinal_residuals = type)
+    ))
+    expect_equal(NCOL(tst$rY), if (type == "probability") 3L else 1L)
+  }
+})
+
+test_that("rf drops unused response levels with a warning", {
+  set.seed(12)
+  tn <- 1e2
+  lv <- c("none", "mild", "moderate", "severe")
+  d <- data.frame(
+    Y = ordered(sample(lv[-2], tn, TRUE), levels = lv),
+    X = rnorm(tn), Z = rnorm(tn)
+  )
+  x <- as.matrix(d["Z"])
+  for (type in c("probability", "mean", "score")) {
+    expect_warning(
+      m <- rf(d$Y, x, ordinal_residuals = type),
+      "Dropping unused level(s) of the response: mild",
+      fixed = TRUE
+    )
+    r <- residuals(m, response = d$Y, data = x)
+    expect_equal(NCOL(r), if (type == "probability") 2L else 1L)
+  }
+  expect_warning(m <- tuned_rf(d$Y, x, max.depths = 1:2), "mild")
+  expect_equal(NCOL(residuals(m, response = d$Y, data = x)), 2L)
+  expect_warning(tst <- comet(Y ~ X | Z, data = d), "mild")
+  expect_equal(NCOL(tst$rY), 2L)
+  ### Two remaining levels are treated as binary
+  d2 <- subset(d, Y != "moderate")
+  expect_warning(m <- rf(d2$Y, as.matrix(d2["Z"])), "mild, moderate")
+  expect_length(residuals(m, response = d2$Y, data = as.matrix(d2["Z"])), NROW(d2))
+  ### Evaluation data missing a level seen during training
+  y <- ordered(sample(lv, tn, TRUE), levels = lv)
+  m <- rf(y, x, ordinal_residuals = "score")
+  idx <- which(y != "mild")
+  expect_length(residuals(m, response = y[idx], data = x[idx, , drop = FALSE]), length(idx))
+  m <- rf(y, x)
+  expect_equal(dim(residuals(m, response = y[idx], data = x[idx, , drop = FALSE])), c(length(idx), 3L))
+  ### Evaluation data containing a level not seen during training
+  expect_warning(m <- rf(d$Y, x))
+  expect_error(residuals(m, response = y, data = x), "not seen during training")
+})
+
 test_that("GCM with multivariate regressions works", {
   set.seed(12)
   tn <- 3e2

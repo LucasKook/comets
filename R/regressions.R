@@ -40,8 +40,35 @@
 #' \code{predict.custom} method is necessary for out-of-sample prediction
 #' and computation of residuals.
 #'
-rf <- function(y, x, ...) {
+#' For ordered factors with more than two levels, \code{"rf"} and
+#' \code{"tuned_rf"} estimate the conditional distribution of the response
+#' with a probability forest. The residuals are then computed from the
+#' estimated probabilities \eqn{p_k(Z) = P(Y = k \mid Z)} and cumulative
+#' probabilities \eqn{P_k(Z) = P(Y \le k \mid Z)}, \eqn{k = 1, \dots, K},
+#' according to \code{ordinal_residuals}:
+#' \code{"probability"} (default) gives the \eqn{K - 1}-dimensional residuals
+#' \eqn{1(Y = k) - p_k(Z)}, \eqn{k = 2, \dots, K}, which have power against
+#' general alternatives; \code{"mean"} gives the one-dimensional residual
+#' \eqn{Y - \sum_k k p_k(Z)} using the integer scores \eqn{1, \dots, K},
+#' which has power against location shifts; \code{"score"} gives the
+#' one-dimensional score residual of a proportional odds model, i.e., the
+#' score with respect to \eqn{\gamma} in
+#' \eqn{\mathrm{logit} P(Y \le k \mid Z) = \mathrm{logit} P_k(Z) - \gamma}
+#' at \eqn{\gamma = 0}, which has the closed form
+#' \eqn{P_{Y-1}(Z) + P_Y(Z) - 1 = P(Y^\prime < Y \mid Z) -
+#' P(Y^\prime > Y \mid Z)} and has power against proportional odds
+#' alternatives.
+#'
+#' @param ordinal_residuals Type of residual computed for ordered factor
+#'     responses with more than two levels, one of \code{"probability"}
+#'     (default), \code{"mean"} or \code{"score"}. See Details. Ignored for
+#'     other response types.
+#'
+rf <- function(y, x, ordinal_residuals = c("probability", "mean", "score"),
+               ...) {
+  ordinal_residuals <- match.arg(ordinal_residuals)
   args <- list(...)
+  y <- .drop_unused_levels(y)
   if (length(unique(y)) == 2) {
     y <- factor(y)
   }
@@ -49,6 +76,8 @@ rf <- function(y, x, ...) {
     args$probability <- TRUE
   }
   rf <- do.call("ranger", c(list(y = y, x = x), args))
+  rf$ordinal_residuals <- ordinal_residuals
+  rf$response_levels <- levels(y)
   class(rf) <- c("rf", class(rf))
   rf
 }
@@ -65,6 +94,14 @@ predict.rf <- function(object, data = NULL, ...) {
 
 #' @exportS3Method residuals rf
 residuals.rf <- function(object, response = NULL, data = NULL, ...) {
+  response <- .align_levels(response, object$response_levels)
+  type <- object$ordinal_residuals
+  if (is.ordered(response) && nlevels(response) > 2 && !is.null(type) &&
+    type != "probability") {
+    class(object) <- class(object)[-1]
+    probs <- predict(object, data = data)$predictions
+    return(.ordinal_residuals(response, probs, type))
+  }
   preds <- predict.rf(object, data, ...)
   if (length(unique(response)) == 2) {
     response <- factor(response)
@@ -81,6 +118,54 @@ residuals.rf <- function(object, response = NULL, data = NULL, ...) {
     )[, -1]
   }
   y - pred
+}
+
+### Internal residuals function for ordered factors, `probs` is the n x K
+### matrix of estimated conditional probabilities P(Y = k | Z)
+.ordinal_residuals <- function(y, probs, type = c("mean", "score")) {
+  type <- match.arg(type)
+  K <- nlevels(y)
+  if (NCOL(probs) != K) {
+    stop("Number of predicted probabilities does not match number of levels.")
+  }
+  k <- as.integer(y)
+  if (type == "mean") {
+    return(k - c(probs %*% seq_len(K)))
+  }
+  ### Cumulative probabilities P_0 = 0, P_1, ..., P_K = 1
+  cprobs <- cbind(0, probs %*% upper.tri(diag(K), diag = TRUE))
+  idx <- seq_along(k)
+  cprobs[cbind(idx, k + 1)] + cprobs[cbind(idx, k)] - 1
+}
+
+### Drop unused levels of a factor response with a warning
+.drop_unused_levels <- function(y) {
+  if (!is.factor(y)) {
+    return(y)
+  }
+  unused <- setdiff(levels(y), levels(droplevels(y)))
+  if (length(unused) > 0) {
+    warning(
+      "Dropping unused level(s) of the response: ",
+      paste(unused, collapse = ", "), call. = FALSE
+    )
+    y <- droplevels(y)
+  }
+  y
+}
+
+### Restrict levels of a factor response to those seen during training
+.align_levels <- function(y, lvls) {
+  if (!is.factor(y) || is.null(lvls) || identical(levels(y), lvls)) {
+    return(y)
+  }
+  if (!all(y %in% lvls)) {
+    stop(
+      "Response contains level(s) not seen during training: ",
+      paste(setdiff(unique(as.character(y)), lvls), collapse = ", ")
+    )
+  }
+  factor(y, levels = lvls, ordered = is.ordered(y))
 }
 
 ### Survival forest
@@ -314,8 +399,11 @@ residuals.cox <- function(object, response = NULL, data = NULL, ...) {
 tuned_rf <- function(y, x, max.depths = 1:5,
                      mtrys = list(1, \(p) ceiling(sqrt(p)), identity),
                      verbose = FALSE,
+                     ordinal_residuals = c("probability", "mean", "score"),
                      ...) {
+  ordinal_residuals <- match.arg(ordinal_residuals)
   args <- list(...)
+  y <- .drop_unused_levels(y)
   if (length(unique(y)) == 2) {
     y <- factor(y)
   }
@@ -341,6 +429,8 @@ tuned_rf <- function(y, x, max.depths = 1:5,
 
   woob <- which.min(sapply(rfs, `[[`, "prediction.error"))
   rf <- rfs[[woob]]
+  rf$ordinal_residuals <- ordinal_residuals
+  rf$response_levels <- levels(y)
   class(rf) <- c("rf", class(rf))
   rf
 }
