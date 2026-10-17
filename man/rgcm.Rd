@@ -27,15 +27,16 @@ must be one of \code{"two.sided"} (default), \code{"greater"} or
 \item{coin}{Logical; whether or not to use the \code{coin} package for
 computing the test statistic and p-value. The \code{coin} package
 computes variances with n - 1 degrees of freedom.
-The default is \code{TRUE}.}
+The default is \code{FALSE}.}
 
 \item{B}{Number of bootstrap samples. Only applies if \code{type = "max"} is
 used.}
 
-\item{type}{Type of test statistic, either \code{"quadratic"} (default) or
-\code{"max"}. If \code{"max"} is specified, the p-value is computed
-based on a bootstrap approximation of the null distribution with
-\code{B} samples.}
+\item{type}{Type of test statistic, either \code{"quadratic"} (default),
+\code{"max"}, or \code{"scalar"}. If \code{"max"} is specified, the
+p-value is computed based on a bootstrap approximation of the null
+distribution with \code{B} samples. The \code{"scalar"} statistic is
+only available for one-dimensional Y and X.}
 
 \item{...}{Further arguments passed to \code{\link[coin]{independence_test}()}.}
 }

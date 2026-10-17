@@ -23,7 +23,7 @@ variable significance testing and modality selection on real-world data can be
 found in [6].
 
 
-```r
+``` r
 set.seed(1)
 n <- 300
 X <- matrix(rnorm(2 * n), ncol = 2)
@@ -42,17 +42,17 @@ $Y$ on $Z$ and $X$ on $Z$ regressions can be investigated by calling `plot(GCM)`
 
 ```
 ## 
-## 	Generalized covariance measure test
+## 	Generalised covariance measure test
 ## 
 ## data:  gcm(Y = Y, X = X, Z = Z)
-## X-squared = 2.8211, df = 2, p-value = 0.244
+## X-squared = 3.1556, df = 2, p-value = 0.2064
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
 The PCM test can be run likewise.
 
 
-```r
+``` r
 PCM <- pcm(Y, X, Z) # plot(PCM)
 ```
 
@@ -65,7 +65,7 @@ conditional independence in this example.
 ## 	Projected covariance measure test
 ## 
 ## data:  pcm(Y = Y, X = X, Z = Z)
-## Z = 4.8589, p-value = 5.901e-07
+## Z = 4.8727, p-value = 5.505e-07
 ## alternative hypothesis: true E[Y | X, Z] is not equal to E[Y | Z]
 ```
 
@@ -75,17 +75,17 @@ corresponding `data` argument. This interface is implemented in `comets()` and
 shown below.
 
 
-```r
+``` r
 dat <- data.frame(Y = Y, X, Z)
 comets(Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
 ```
 
 ```
 ## 
-## 	Generalized covariance measure test
+## 	Generalised covariance measure test
 ## 
 ## data:  comets(formula = Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
-## X-squared = 3.2184, df = 2, p-value = 0.2
+## X-squared = 3.2816, df = 2, p-value = 0.1938
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
@@ -127,7 +127,7 @@ Cox model and once using a random survival forest. Both tests agree to reject
 the null hypothesis at conventional significance levels.
 
 
-```r
+``` r
 library("survival")
 data("cancer", package = "survival")
 cancer$surv <- with(cancer, Surv(time, status == 2))
@@ -136,23 +136,23 @@ comets(surv ~ sex | age, data = cancer, reg_YonZ = "cox")
 
 ```
 ## 
-## 	Generalized covariance measure test
+## 	Generalised covariance measure test
 ## 
 ## data:  comets(formula = surv ~ sex | age, data = cancer, reg_YonZ = "cox")
-## X-squared = 7.7608, df = 1, p-value = 0.005339
+## X-squared = 7.6583, df = 1, p-value = 0.005651
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
-```r
+``` r
 comets(surv ~ sex | age, data = cancer, reg_YonZ = "survforest")
 ```
 
 ```
 ## 
-## 	Generalized covariance measure test
+## 	Generalised covariance measure test
 ## 
 ## data:  comets(formula = surv ~ sex | age, data = cancer, reg_YonZ = "survforest")
-## X-squared = 14.827, df = 1, p-value = 0.0001178
+## X-squared = 14.824, df = 1, p-value = 0.000118
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
@@ -165,19 +165,72 @@ usage with the `multivariate` argument also allows the specification of
 multivariate regression models (this option is experimental). 
 
 
-```r
+``` r
 bivY <- cbind(Y, 0.5 * X[, 1] + Z[, 1] + rnorm(n))
 gcm(bivY, X, Z)
 ```
 
 ```
 ## 
-## 	Generalized covariance measure test
+## 	Generalised covariance measure test
 ## 
 ## data:  gcm(Y = bivY, X = X, Z = Z)
-## X-squared = 42.177, df = 4, p-value = 1.533e-08
+## X-squared = 40.301, df = 4, p-value = 3.75e-08
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
+
+# Usage example: Ordinal response
+
+For ordered factor responses, the random forest regressions (`"rf"` and
+`"tuned_rf"`) estimate the conditional distribution of $Y$ given $Z$ via a
+probability forest. The argument `ordinal_residuals` controls which residuals
+are computed from it: `"probability"` (default) gives the $K - 1$ dimensional
+residuals $1(Y = k) - P(Y = k \mid Z)$, which have power against general
+alternatives, `"mean"` gives $Y - E[Y \mid Z]$ using integer scores, and
+`"score"` gives the score residual of a proportional odds model,
+$P(Y' < Y \mid Z) - P(Y' > Y \mid Z)$, which has power against proportional odds
+alternatives. Below, we simulate an ordinal response with four levels that
+depends on $X$ given $Z$ via a proportional odds model.
+
+
+``` r
+set.seed(1)
+n <- 300
+Z <- rnorm(n)
+X <- Z + rnorm(n)
+Y <- cut(Z + 0.3 * X + rlogis(n),
+  breaks = c(-Inf, -1, 0, 1, Inf),
+  labels = c("none", "mild", "moderate", "severe"), ordered_result = TRUE
+)
+dord <- data.frame(Y, X, Z)
+comets(Y ~ X | Z, data = dord)
+```
+
+```
+## 
+## 	Generalised covariance measure test
+## 
+## data:  comets(formula = Y ~ X | Z, data = dord)
+## X-squared = 8.849, df = 3, p-value = 0.03137
+## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
+```
+
+``` r
+comets(Y ~ X | Z, data = dord, args_YonZ = list(ordinal_residuals = "score"))
+```
+
+```
+## 
+## 	Generalised covariance measure test
+## 
+## data:  comets(formula = Y ~ X | Z, data = dord, args_YonZ = list(ordinal_residuals = "score"))
+## X-squared = 10.161, df = 1, p-value = 0.001434
+## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
+```
+
+Both tests reject the null hypothesis at the 5% level. The test based on the
+one-dimensional score residual yields a smaller p-value, since it targets the
+proportional odds alternative used to simulate the data.
 
 # Installation
 

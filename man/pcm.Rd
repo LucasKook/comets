@@ -85,7 +85,7 @@ indices can be supplied.}
 \item{coin}{Logical; whether or not to use the \code{coin} package for
 computing the test statistic and p-value. The \code{coin} package
 computes variances with n - 1 degrees of freedom.
-The default is \code{TRUE}.}
+The default is \code{FALSE}.}
 
 \item{cointrol}{List; further arguments passed to
 \code{\link[coin]{independence_test}}.}
@@ -100,8 +100,6 @@ Object of class '\code{pcm}' and '\code{htest}' with the following
 components:
 \item{\code{statistic}}{The value of the test statistic.}
 \item{\code{p.value}}{The p-value for the \code{hypothesis}}
-\item{\code{parameter}}{In case X is multidimensional, this is the degrees of
-    freedom used for the chi-squared test.}
 \item{\code{hypothesis}}{Null hypothesis of conditional mean independence.}
 \item{\code{null.value}}{Null hypothesis of conditional mean independence.}
 \item{\code{method}}{The string \code{"Projected covariance measure test"}.}
@@ -130,5 +128,5 @@ Y <- X[, 2]^2 + Z[, 2] + rnorm(n)
 Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2024). The
 Projected Covariance Measure for assumption-lean variable significance
 testing. The Annals of Statistics, 52(6), 2851-2878.
-\doi{10.1214/19-aos1857}
+\doi{10.1214/24-AOS2447}
 }

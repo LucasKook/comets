@@ -38,9 +38,10 @@
 #' @export
 comet <- function(formula, data, test = c("gcm", "pcm", "wgcm", "kgcm"), ...) {
   fm <- Formula::as.Formula(formula)
-  Y <- stats::model.response(stats::model.frame(fm, data))
-  X <- .rm_int(stats::model.matrix(fm, data, rhs = 1))
-  Z <- .rm_int(stats::model.matrix(fm, data, rhs = 2))
+  mf <- stats::model.frame(fm, data)
+  Y <- stats::model.response(mf)
+  X <- .rm_int(stats::model.matrix(fm, mf, rhs = 1))
+  Z <- .rm_int(stats::model.matrix(fm, mf, rhs = 2))
   tst <- do.call(match.arg(test), c(list(Y = Y, X = X, Z = Z), list(...)))
   tst$data.name <- paste0(deparse(match.call()), collapse = "\n")
   tst

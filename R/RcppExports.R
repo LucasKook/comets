@@ -2,10 +2,9 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 gaussian_gram <- function(x, bandwidth, n, d) {
-    .Call('_comets_gaussian_gram', PACKAGE = 'comets', x, bandwidth, n, d)
+  .Call(`_comets_gaussian_gram`, x, bandwidth, n, d)
 }
 
 medianheur <- function(x, n, d) {
-    .Call('_comets_medianheur', PACKAGE = 'comets', x, n, d)
+  .Call(`_comets_medianheur`, x, n, d)
 }
-

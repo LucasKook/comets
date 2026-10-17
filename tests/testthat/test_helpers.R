@@ -312,6 +312,92 @@ test_that("rf works with different response types", {
   })
 })
 
+test_that("rf residuals for ordered responses work", {
+  set.seed(12)
+  tn <- 2e2
+  z <- rnorm(tn)
+  x <- matrix(z, dimnames = list(NULL, "z"))
+  y <- cut(z + rlogis(tn), c(-Inf, -1, 0, 1.5, Inf), ordered_result = TRUE)
+  ### Closed form score residual agrees with MASS::polr
+  if (requireNamespace("MASS") && requireNamespace("sandwich")) {
+    m <- MASS::polr(y ~ z)
+    sc <- sandwich::estfun(m)
+    r_polr <- -unname(rowSums(sc[, names(m$zeta)]))
+    expect_equal(.ordinal_residuals(y, stats::fitted(m), "score"), r_polr)
+  }
+  ### Dimensions and mean zero
+  m <- rf(y, x)
+  expect_equal(dim(residuals(m, response = y, data = x)), c(tn, 3L))
+  for (type in c("mean", "score")) {
+    m <- rf(y, x, ordinal_residuals = type)
+    r <- residuals(m, response = y, data = x)
+    expect_length(r, tn)
+    expect_lt(abs(mean(r)), 0.1)
+    m <- tuned_rf(y, x, ordinal_residuals = type, max.depths = 1:2)
+    expect_length(residuals(m, response = y, data = x), tn)
+  }
+  ### Score residuals are bounded, and mean residuals use integer scores
+  probs <- matrix(c(0.2, 0.3, 0.5), nrow = 3, ncol = 3, byrow = TRUE)
+  yy <- ordered(1:3)
+  expect_equal(.ordinal_residuals(yy, probs, "score"), c(-0.8, -0.3, 0.5))
+  expect_equal(.ordinal_residuals(yy, probs, "mean"), 1:3 - 2.3)
+  ### Binary ordered responses are unaffected
+  yb <- ordered(as.numeric(y) > 2)
+  expect_equal(
+    residuals(rf(yb, x, ordinal_residuals = "score", seed = 1),
+      response = yb, data = x
+    ),
+    residuals(rf(yb, x, seed = 1), response = yb, data = x)
+  )
+  ### Usage through comet()
+  dat <- data.frame(y = y, z = z, x = rnorm(tn))
+  for (type in c("probability", "mean", "score")) {
+    expect_no_error(tst <- comet(y ~ x | z,
+      data = dat,
+      args_YonZ = list(ordinal_residuals = type)
+    ))
+    expect_equal(NCOL(tst$rY), if (type == "probability") 3L else 1L)
+  }
+})
+
+test_that("rf drops unused response levels with a warning", {
+  set.seed(12)
+  tn <- 1e2
+  lv <- c("none", "mild", "moderate", "severe")
+  d <- data.frame(
+    Y = ordered(sample(lv[-2], tn, TRUE), levels = lv),
+    X = rnorm(tn), Z = rnorm(tn)
+  )
+  x <- as.matrix(d["Z"])
+  for (type in c("probability", "mean", "score")) {
+    expect_warning(
+      m <- rf(d$Y, x, ordinal_residuals = type),
+      "Dropping unused level(s) of the response: mild",
+      fixed = TRUE
+    )
+    r <- residuals(m, response = d$Y, data = x)
+    expect_equal(NCOL(r), if (type == "probability") 2L else 1L)
+  }
+  expect_warning(m <- tuned_rf(d$Y, x, max.depths = 1:2), "mild")
+  expect_equal(NCOL(residuals(m, response = d$Y, data = x)), 2L)
+  expect_warning(tst <- comet(Y ~ X | Z, data = d), "mild")
+  expect_equal(NCOL(tst$rY), 2L)
+  ### Two remaining levels are treated as binary
+  d2 <- subset(d, Y != "moderate")
+  expect_warning(m <- rf(d2$Y, as.matrix(d2["Z"])), "mild, moderate")
+  expect_length(residuals(m, response = d2$Y, data = as.matrix(d2["Z"])), NROW(d2))
+  ### Evaluation data missing a level seen during training
+  y <- ordered(sample(lv, tn, TRUE), levels = lv)
+  m <- rf(y, x, ordinal_residuals = "score")
+  idx <- which(y != "mild")
+  expect_length(residuals(m, response = y[idx], data = x[idx, , drop = FALSE]), length(idx))
+  m <- rf(y, x)
+  expect_equal(dim(residuals(m, response = y[idx], data = x[idx, , drop = FALSE])), c(length(idx), 3L))
+  ### Evaluation data containing a level not seen during training
+  expect_warning(m <- rf(d$Y, x))
+  expect_error(residuals(m, response = y, data = x), "not seen during training")
+})
+
 test_that("GCM with multivariate regressions works", {
   set.seed(12)
   tn <- 3e2
@@ -367,4 +453,79 @@ test_that("PCM with rep larger 1 and indices", {
     }
     tmp("lrm")
   })
+})
+
+test_that("kGCM works with multivariate X and matrix/data.frame inputs", {
+  set.seed(12)
+  tn <- 1e2
+  X <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(X) <- c("X1", "X2")
+  Z <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(Z) <- c("Z1", "Z2")
+  Y <- rnorm(tn)
+  kgcm1 <- kgcm(Y, X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm", B = 99)
+  expect_length(kgcm1$statistic, 1)
+  expect_true(kgcm1$p.value > 0 && kgcm1$p.value <= 1)
+  expect_no_error(kgcm(cbind(Y), X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm", B = 99))
+  expect_no_error(kgcm(Y, X, as.data.frame(Z), reg_XonZ = "lrm", reg_YonZ = "lrm", B = 99))
+  ### Univariate X gives the same statistic as before
+  kgcm2 <- kgcm(Y, X[, 1], Z, reg_XonZ = "lrm", reg_YonZ = "lrm", B = 99)
+  RP <- c(kgcm2$rY) * c(kgcm2$rX)
+  expect_equal(unname(kgcm2$statistic), c(t(RP) %*% kgcm2$K %*% RP) / tn)
+})
+
+test_that("scalar GCM returns signed statistic", {
+  set.seed(42)
+  rY <- rnorm(100)
+  rX <- rnorm(100) - rY
+  tst <- rgcm(rY, rX, type = "scalar", coin = FALSE)
+  expect_true(tst$statistic < 0)
+  expect_null(tst$parameter)
+  expect_equal(tst$p.value, 2 * pnorm(-abs(unname(tst$statistic))))
+  expect_equal(
+    unname(rgcm(rY, rX, type = "quadratic", coin = FALSE)$statistic),
+    unname(tst$statistic)^2
+  )
+  expect_error(rgcm(rY, cbind(rX, rnorm(100)), type = "scalar", coin = FALSE))
+  expect_error(rgcm(rY, rX, alternative = "foo"))
+})
+
+test_that("data.frame inputs and missing values are handled", {
+  set.seed(12)
+  tn <- 1e2
+  X <- data.frame(X1 = rnorm(tn), X2 = rnorm(tn))
+  Z <- data.frame(Z1 = rnorm(tn), Z2 = rnorm(tn))
+  Y <- data.frame(Y1 = rnorm(tn), Y2 = rnorm(tn))
+  expect_no_error(gcm(Y, X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm"))
+  expect_no_error(gcm(Y[, 1], X, Z, reg_XonZ = "postlasso", reg_YonZ = "glrm"))
+  expect_no_error(pcm(Y[, 1], X, Z, reg_YonXZ = "lrm", reg_YonZ = "lrm"))
+  dat <- data.frame(y = Y[, 1], x = X[, 1], z = Z[, 1])
+  dat$y[1:5] <- NA
+  dat$z[6:10] <- NA
+  expect_no_error(tst <- comet(y ~ x | z, data = dat, reg_XonZ = "lrm", reg_YonZ = "lrm"))
+  expect_length(tst$rY, tn - 10)
+})
+
+test_that("qrf residuals are conditional on Z", {
+  set.seed(12)
+  tn <- 2e2
+  z <- rnorm(tn)
+  y <- 3 * z + rnorm(tn)
+  m <- qrf(y, cbind(z))
+  r <- residuals(m, response = y, data = cbind(z))
+  expect_true(abs(cor(r, z)) < 0.2)
+  expect_true(all(abs(r) <= 1 + 1e-8))
+})
+
+test_that("wGCM passes cointrol to coin", {
+  set.seed(12)
+  tn <- 1e2
+  X <- rnorm(tn)
+  Z <- rnorm(tn)
+  Y <- rnorm(tn)
+  tst <- wgcm(Y, X, Z,
+    reg_XonZ = "lrm", reg_YonZ = "lrm", reg_wfun = "lrm",
+    cointrol = list(distribution = coin::approximate(9))
+  )
+  expect_true(any(abs(tst$p.value - (0:9) / 9) < 1e-8))
 })

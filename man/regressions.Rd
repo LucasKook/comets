@@ -16,7 +16,7 @@
 \alias{lgbm}
 \title{Implemented regression methods}
 \usage{
-rf(y, x, ...)
+rf(y, x, ordinal_residuals = c("probability", "mean", "score"), ...)
 
 survforest(y, x, ...)
 
@@ -40,6 +40,7 @@ tuned_rf(
   max.depths = 1:5,
   mtrys = list(1, function(p) ceiling(sqrt(p)), identity),
   verbose = FALSE,
+  ordinal_residuals = c("probability", "mean", "score"),
   ...
 )
 
@@ -65,13 +66,19 @@ lgbm(y, x, nrounds = 100L, verbose = -1L, ...)
 
 \item{x}{Design matrix of predictors.}
 
+\item{ordinal_residuals}{Type of residual computed for ordered factor
+responses with more than two levels, one of \code{"probability"}
+(default), \code{"mean"} or \code{"score"}. See Details. Ignored for
+other response types.}
+
 \item{...}{Additional arguments passed to the underlying regression method.
 In case of \code{"rf"}, \code{"tuned_rf"}, \code{"survforest"} and
 \code{"qrf"}, this is \code{\link[ranger]{ranger}}. In case of
 \code{"lasso"} and \code{"ridge"}, this is \code{\link[glmnet]{glmnet}}.
 In case of \code{"cox"}, this is \code{\link[survival]{coxph}}. In case
-of \code{"xgb"} and \code{"tuned_xgb"} this is
-\code{\link[xgboost]{xgboost}}.}
+of \code{"xgb"} and \code{"tuned_xgb"} these are the parameters passed
+to \code{\link[xgboost]{xgb.train}}. In case of \code{"lgbm"}, this is
+\code{lgb.train} from the \code{lightgbm} package.}
 
 \item{s}{Which lambda to use for prediction, defaults to
 \code{"lambda.min"}. See \code{\link[glmnet]{cv.glmnet}}}
@@ -82,21 +89,21 @@ of \code{"xgb"} and \code{"tuned_xgb"} this is
 \item{mtrys}{for \code{mtry} to tune out-of-bag. See
 \code{\link[ranger]{ranger}}.}
 
-\item{verbose}{See \code{\link[xgboost]{xgboost}}.}
+\item{verbose}{See \code{\link[xgboost]{xgb.train}}.}
 
-\item{nrounds}{See \code{\link[xgboost]{xgboost}}.}
+\item{nrounds}{See \code{\link[xgboost]{xgb.train}}.}
 
 \item{nfold}{Number of folds for \code{nfold}-cross validation.}
 
 \item{folds}{Specify folds for cross validation.}
 
 \item{etas}{Values for \code{eta} to cross-validate. See
-\code{\link[xgboost]{xgboost}}.}
+\code{\link[xgboost]{xgb.train}}.}
 
 \item{max_depths}{Values for \code{max_depth} to cross-validate. See
-\code{\link[xgboost]{xgboost}}.}
+\code{\link[xgboost]{xgb.train}}.}
 
-\item{metrics}{See \code{\link[xgboost]{xgboost}}.}
+\item{metrics}{See \code{\link[xgboost]{xgb.cv}}.}
 }
 \description{
 Implemented regression methods
@@ -104,20 +111,21 @@ Implemented regression methods
 \details{
 The implemented choices are \code{"rf"} for random forests as implemented in
 ranger, \code{"lasso"} for cross-validated Lasso regression (using the
-one-standard error rule), \code{"ridge"}
-for cross-validated ridge regression (using the one-standard error rule),
+penalty specified in \code{s}), \code{"ridge"}
+for cross-validated ridge regression (using the penalty specified in \code{s}),
 \code{"cox"} for the Cox proportional
 hazards model as implemented in survival, \code{"qrf"} or \code{"survforest"}
 for quantile and survival random forests, respectively. The option
 \code{"postlasso"} option refers to a cross-validated LASSO (using the
-one-standard error rule) and subsequent OLS regression. The \code{"lrm"}
+penalty specified in \code{s}) and subsequent OLS regression. The \code{"lrm"}
 option implements a standard linear regression model. The \code{"xgb"} and
-\code{"tuned_xgb"} options require the \code{xgboost} package.
+\code{"tuned_xgb"} options require the \code{xgboost} package and the
+\code{"lgbm"} option requires the \code{lightgbm} package.
 
 The \code{"tuned_rf"} regression method tunes the \code{mtry} and
 \code{max.depth} parameters in \code{\link[ranger]{ranger}} out-of-bag.
 The \code{"tuned_xgb"} regression method uses k-fold cross-validation to
-tune the \code{nrounds}, \code{mtry} and \code{max_depth} parameters in
+tune the \code{nrounds}, \code{eta} and \code{max_depth} parameters in
 \code{\link[xgboost]{xgb.cv}}.
 
 New regression methods can be implemented and supplied as well and need the
@@ -129,4 +137,23 @@ method is sufficient, which should take arguments
 \code{object, response = NULL, data = NULL, ...}. For the PCM test, a
 \code{predict.custom} method is necessary for out-of-sample prediction
 and computation of residuals.
+
+For ordered factors with more than two levels, \code{"rf"} and
+\code{"tuned_rf"} estimate the conditional distribution of the response
+with a probability forest. The residuals are then computed from the
+estimated probabilities \eqn{p_k(Z) = P(Y = k \mid Z)} and cumulative
+probabilities \eqn{P_k(Z) = P(Y \le k \mid Z)}, \eqn{k = 1, \dots, K},
+according to \code{ordinal_residuals}:
+\code{"probability"} (default) gives the \eqn{K - 1}-dimensional residuals
+\eqn{1(Y = k) - p_k(Z)}, \eqn{k = 2, \dots, K}, which have power against
+general alternatives; \code{"mean"} gives the one-dimensional residual
+\eqn{Y - \sum_k k p_k(Z)} using the integer scores \eqn{1, \dots, K},
+which has power against location shifts; \code{"score"} gives the
+one-dimensional score residual of a proportional odds model, i.e., the
+score with respect to \eqn{\gamma} in
+\eqn{\mathrm{logit} P(Y \le k \mid Z) = \mathrm{logit} P_k(Z) - \gamma}
+at \eqn{\gamma = 0}, which has the closed form
+\eqn{P_{Y-1}(Z) + P_Y(Z) - 1 = P(Y^\prime < Y \mid Z) -
+P(Y^\prime > Y \mid Z)} and has power against proportional odds
+alternatives.
 }
