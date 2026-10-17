@@ -398,6 +398,52 @@ test_that("rf drops unused response levels with a warning", {
   expect_error(residuals(m, response = y, data = x), "not seen during training")
 })
 
+test_that("printed hypothesis and method depend on the residuals", {
+  set.seed(12)
+  tn <- 1e2
+  d <- data.frame(Z = rnorm(tn), X = rnorm(tn), Yn = rnorm(tn))
+  d$Y <- cut(d$Z + rlogis(tn), c(-Inf, -1, 0, 1, Inf), ordered_result = TRUE)
+  hyp <- \(tst) names(tst$null.value)
+  tst <- comet(Yn ~ X | Z, data = d)
+  expect_equal(hyp(tst), "E[cov(Y, X | Z)]")
+  expect_equal(tst$method, "Generalised covariance measure test")
+  expect_equal(hyp(comet(Y ~ X | Z, data = d)), "E[cov(1(Y = k), X | Z)]")
+  expect_equal(hyp(comet(Y ~ X | Z,
+    data = d,
+    args_YonZ = list(ordinal_residuals = "mean")
+  )), "E[cov(Y, X | Z)]")
+  for (coin in c(FALSE, TRUE)) {
+    tst <- comet(Y ~ X | Z,
+      data = d, coin = coin,
+      args_YonZ = list(ordinal_residuals = "score")
+    )
+    expect_equal(hyp(tst), "E[cov(R, X | Z)]")
+    expect_equal(tst$method, "TRAM-GCM test")
+  }
+  expect_equal(
+    hyp(comet(Yn ~ X | Z, data = d, reg_YonZ = "qrf")),
+    "E[cov(F(Y | Z), X | Z)]"
+  )
+  expect_equal(
+    hyp(comet(Yn ~ X | Z, data = d, test = "wgcm", reg_YonZ = "qrf")),
+    "E[w(Z) cov(F(Y | Z), X | Z)]"
+  )
+  expect_equal(hyp(kgcm(d$Yn, d$X, d$Z)), "E[w(Z) cov(Y, X | Z)]")
+  library("survival")
+  data("GBSG2", package = "TH.data")
+  for (reg in c("cox", "survforest")) {
+    tst <- comet(Surv(time, cens) ~ horTh | age, data = GBSG2, reg_YonZ = reg)
+    expect_equal(hyp(tst), "E[cov(R, X | Z)]")
+    expect_equal(tst$method, "TRAM-GCM test")
+  }
+  ### Pre-computed residuals
+  expect_equal(hyp(rgcm(rnorm(tn), rnorm(tn))), "E[cov(Y, X | Z)]")
+  expect_equal(
+    hyp(rgcm(rnorm(tn), rnorm(tn), hypothesis = "E[cov(R, X | Z)]")),
+    "E[cov(R, X | Z)]"
+  )
+})
+
 test_that("GCM with multivariate regressions works", {
   set.seed(12)
   tn <- 3e2

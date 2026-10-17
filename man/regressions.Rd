@@ -149,11 +149,13 @@ according to \code{ordinal_residuals}:
 general alternatives; \code{"mean"} gives the one-dimensional residual
 \eqn{Y - \sum_k k p_k(Z)} using the integer scores \eqn{1, \dots, K},
 which has power against location shifts; \code{"score"} gives the
-one-dimensional score residual of a proportional odds model, i.e., the
-score with respect to \eqn{\gamma} in
-\eqn{\mathrm{logit} P(Y \le k \mid Z) = \mathrm{logit} P_k(Z) - \gamma}
-at \eqn{\gamma = 0}, which has the closed form
+one-dimensional score residual of a proportional odds model with
+transformation function \eqn{h(k \mid Z) = \mathrm{logit} P_k(Z)}
+estimated nonparametrically by the forest, i.e., the score with respect to
+\eqn{\gamma} in \eqn{\mathrm{logit} P(Y \le k \mid Z) = h(k \mid Z) -
+\gamma} at \eqn{\gamma = 0}, which has the closed form
 \eqn{P_{Y-1}(Z) + P_Y(Z) - 1 = P(Y^\prime < Y \mid Z) -
-P(Y^\prime > Y \mid Z)} and has power against proportional odds
-alternatives.
+P(Y^\prime > Y \mid Z)}. With \code{"score"}, the GCM test is the TRAM-GCM
+test (Kook et al., 2025, \doi{10.1080/01621459.2024.2395588}) with a
+proportional odds model.
 }
