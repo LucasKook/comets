@@ -99,8 +99,8 @@ kgcm <- function(
 
   structure(list(
     statistic = c("Psi" = obs), p.value = pval, parameter = NULL,
-    hypothesis = c("E[w(Z) cov(Y, X | Z)]" = "0"),
-    null.value = c("E[w(Z) cov(Y, X | Z)]" = "0"), alternative = "two.sided",
+    hypothesis = stats::setNames("0", .hypothesis(rY, "w(Z) ")),
+    null.value = stats::setNames("0", .hypothesis(rY, "w(Z) ")), alternative = "two.sided",
     method = paste0("Kernel generalised covariance measure test"),
     data.name = paste0(deparse(match.call()), collapse = "\n"),
     rY = rY, rX = rX, K = K, models = models

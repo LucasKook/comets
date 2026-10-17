@@ -3,7 +3,9 @@
 #' @details
 #' The generalised covariance measure test tests whether the conditional
 #' covariance of Y and X given Z is zero. This implementation also supports the
-#' TRAM-GCM test for survival responses, which tests whether the expected
+#' TRAM-GCM test for survival and ordinal responses (see
+#' \code{ordinal_residuals} in \code{\link[comets]{regressions}}), which tests
+#' whether the expected
 #' conditional covariance between the score residuals of a Y on Z regression
 #' and X is zero.
 #'
@@ -57,9 +59,16 @@
 #' \item{\code{p.value}}{The p-value for the \code{hypothesis}}
 #' \item{\code{parameter}}{In case X is multidimensional, this is the degrees of
 #'     freedom used for the chi-squared test.}
-#' \item{\code{hypothesis}}{String specifying the null hypothesis.}
+#' \item{\code{hypothesis}}{String specifying the null hypothesis. If the
+#'     residuals for the Y on Z regression are not of the form
+#'     \eqn{Y - E[Y \mid Z]}, Y is replaced by the corresponding quantity:
+#'     \code{R} denotes the score residual of a transformation model
+#'     (TRAM-GCM test), \code{1(Y = k)} the indicators of the levels of a
+#'     factor response and \code{F(Y | Z)} the conditional distribution
+#'     function of the response.}
 #' \item{\code{null.value}}{String specifying the null hypothesis.}
-#' \item{\code{method}}{The string \code{"Generalised covariance measure test"}.}
+#' \item{\code{method}}{The string \code{"Generalised covariance measure test"},
+#'     or \code{"TRAM-GCM test"} for score residuals of transformation models.}
 #' \item{\code{data.name}}{A character string giving the name(s) of the data.}
 #' \item{\code{rY}}{Residuals for the Y on Z regression.}
 #' \item{\code{rX}}{Residuals for the X on Z regression.}
@@ -229,6 +238,22 @@ gcm <- function(
   list("stat" = stat, "pval" = pval, "df" = c("df" = dX * dY))
 }
 
+### Label residuals for printing the null hypothesis, e.g., "R" for score
+### residuals of transformation models (TRAM-GCM)
+.label_residuals <- function(r, label, tram = FALSE) {
+  attr(r, "label") <- label
+  attr(r, "tram") <- tram
+  r
+}
+
+.hypothesis <- function(rY, weight = "") {
+  lab <- attr(rY, "label")
+  if (is.null(lab)) {
+    lab <- "Y"
+  }
+  paste0("E[", weight, "cov(", lab, ", X | Z)]")
+}
+
 .rm_int <- function(x) {
   if (all(x[, 1] == 1)) {
     return(x[, -1L, drop = FALSE])
@@ -304,6 +329,10 @@ plot.gcm <- function(x, plot = TRUE, ...) {
 #' @param rY Vector or matrix of response values.
 #' @param rX Matrix or data.frame of covariates.
 #' @inheritParams gcm
+#' @param hypothesis Character string describing the quantity whose
+#'     expectation is zero under the null hypothesis. Defaults to
+#'     \code{"E[cov(Y, X | Z)]"} or a description based on the residuals
+#'     computed by the regression methods in \code{\link[comets]{regressions}}.
 #' @param ... Further arguments passed to \code{\link[coin]{independence_test}()}.
 #'
 #' @returns Object of class '\code{gcm}' and '\code{htest}' with the following
@@ -312,18 +341,33 @@ plot.gcm <- function(x, plot = TRUE, ...) {
 #' \item{\code{p.value}}{The p-value for the \code{hypothesis}}
 #' \item{\code{parameter}}{In case X is multidimensional, this is the degrees of
 #'     freedom used for the chi-squared test.}
-#' \item{\code{hypothesis}}{String specifying the null hypothesis.}
+#' \item{\code{hypothesis}}{String specifying the null hypothesis. If the
+#'     residuals for the Y on Z regression are not of the form
+#'     \eqn{Y - E[Y \mid Z]}, Y is replaced by the corresponding quantity:
+#'     \code{R} denotes the score residual of a transformation model
+#'     (TRAM-GCM test), \code{1(Y = k)} the indicators of the levels of a
+#'     factor response and \code{F(Y | Z)} the conditional distribution
+#'     function of the response.}
 #' \item{\code{null.value}}{String specifying the null hypothesis.}
-#' \item{\code{method}}{The string \code{"Generalised covariance measure test"}.}
+#' \item{\code{method}}{The string \code{"Generalised covariance measure test"},
+#'     or \code{"TRAM-GCM test"} for score residuals of transformation models.}
 #' \item{\code{data.name}}{A character string giving the name(s) of the data.}
 #' \item{\code{rY}}{Residuals for the Y on Z regression.}
 #' \item{\code{rX}}{Residuals for the X on Z regression.}
 #' @export
 rgcm <- function(
   rY, rX, alternative = "two.sided", coin = FALSE, B = 499L,
-  type = c("quadratic", "max", "scalar"), ...
+  type = c("quadratic", "max", "scalar"), hypothesis = NULL, ...
 ) {
   type <- match.arg(type)
+  if (is.null(hypothesis)) {
+    hypothesis <- .hypothesis(rY)
+  }
+  method <- if (isTRUE(attr(rY, "tram"))) {
+    "TRAM-GCM test"
+  } else {
+    "Generalised covariance measure test"
+  }
   alternative <- match.arg(alternative, c("two.sided", "less", "greater"))
   if (coin) {
     tst <- coin::independence_test(rY ~ rX,
@@ -348,9 +392,9 @@ rgcm <- function(
   )
   structure(list(
     statistic = stat, p.value = pval, parameter = df,
-    hypothesis = c("E[cov(Y, X | Z)]" = "0"),
-    null.value = c("E[cov(Y, X | Z)]" = "0"), alternative = alternative,
-    method = paste0("Generalised covariance measure test"),
+    hypothesis = stats::setNames("0", hypothesis),
+    null.value = stats::setNames("0", hypothesis), alternative = alternative,
+    method = method,
     data.name = paste0(deparse(match.call()), collapse = "\n"),
     rY = rY, rX = rX
   ), class = c("gcm", "htest"), test = tst)

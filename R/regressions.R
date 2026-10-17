@@ -51,13 +51,15 @@
 #' general alternatives; \code{"mean"} gives the one-dimensional residual
 #' \eqn{Y - \sum_k k p_k(Z)} using the integer scores \eqn{1, \dots, K},
 #' which has power against location shifts; \code{"score"} gives the
-#' one-dimensional score residual of a proportional odds model, i.e., the
-#' score with respect to \eqn{\gamma} in
-#' \eqn{\mathrm{logit} P(Y \le k \mid Z) = \mathrm{logit} P_k(Z) - \gamma}
-#' at \eqn{\gamma = 0}, which has the closed form
+#' one-dimensional score residual of a proportional odds model with
+#' transformation function \eqn{h(k \mid Z) = \mathrm{logit} P_k(Z)}
+#' estimated nonparametrically by the forest, i.e., the score with respect to
+#' \eqn{\gamma} in \eqn{\mathrm{logit} P(Y \le k \mid Z) = h(k \mid Z) -
+#' \gamma} at \eqn{\gamma = 0}, which has the closed form
 #' \eqn{P_{Y-1}(Z) + P_Y(Z) - 1 = P(Y^\prime < Y \mid Z) -
-#' P(Y^\prime > Y \mid Z)} and has power against proportional odds
-#' alternatives.
+#' P(Y^\prime > Y \mid Z)}. With \code{"score"}, the GCM test is the TRAM-GCM
+#' test (Kook et al., 2025, \doi{10.1080/01621459.2024.2395588}) with a
+#' proportional odds model.
 #'
 #' @param ordinal_residuals Type of residual computed for ordered factor
 #'     responses with more than two levels, one of \code{"probability"}
@@ -100,13 +102,21 @@ residuals.rf <- function(object, response = NULL, data = NULL, ...) {
     type != "probability") {
     class(object) <- class(object)[-1]
     probs <- predict(object, data = data)$predictions
-    return(.ordinal_residuals(response, probs, type))
+    r <- .ordinal_residuals(response, probs, type)
+    if (type == "score") {
+      r <- .label_residuals(r, "R", tram = TRUE)
+    }
+    return(r)
   }
   preds <- predict.rf(object, data, ...)
   if (length(unique(response)) == 2) {
     response <- factor(response)
   }
-  .compute_residuals(response, preds)
+  r <- .compute_residuals(response, preds)
+  if (is.factor(response) && nlevels(response) > 2) {
+    r <- .label_residuals(r, "1(Y = k)")
+  }
+  r
 }
 
 ### Internal residuals function dealing with factors
@@ -186,7 +196,7 @@ residuals.survforest <- function(object, response, data, ...) {
   ipreds <- sapply(seq_len(nrow(preds)), \(smpl) {
     -log(preds[smpl, idx[smpl]])
   })
-  .compute_residuals(status, ipreds)
+  .label_residuals(.compute_residuals(status, ipreds), "R", tram = TRUE)
 }
 
 ### Quantile forest
@@ -214,7 +224,7 @@ residuals.qrf <- \(object, data, ...) {
   K <- K / pmax(colSums(K), .Machine$double.eps)
   pred <- \(i) sum(K[i, ] * as.numeric(object$response <= object$response[i]))
   ipreds <- sapply(seq_along(object$response), pred)
-  2 * ipreds - 1
+  .label_residuals(2 * ipreds - 1, "F(Y | Z)")
 }
 
 # Lasso/ridge -------------------------------------------------------------
@@ -386,7 +396,7 @@ predict.cox <- function(object, data = NULL, ...) {
 #' @exportS3Method residuals cox
 residuals.cox <- function(object, response = NULL, data = NULL, ...) {
   preds <- -log(predict.cox(object, data, type = "survival"))
-  .compute_residuals(response[, 2], preds)
+  .label_residuals(.compute_residuals(response[, 2], preds), "R", tram = TRUE)
 }
 
 # Tuned (mtry/max.depth) ranger ------------------------------------------

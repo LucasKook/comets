@@ -9,12 +9,13 @@ generalised [4] Covariance Measure tests (GCM, PCM, wGCM, kGCM tests) can be
 used to test conditional independence between a real-valued response $Y$ and
 features/modalities $X$ given additional features/modalities $Z$ using any
 sufficiently predictive supervised learning algorithms. An extension of the GCM
-to censored responses was proposed in [5] and is implemented with survival
-regression methods. The `comets` R package implements these covariance measure
-tests (COMETs) with a user-friendly interface which allows the user to use any
-sufficiently predictive supervised learning algorithm of their choosing. The
-default is to use random forests implemented in `ranger` for all regressions. A
-Python version of this package is available
+to censored and ordinal responses was proposed in [5] and is implemented with
+survival regression methods and probability forests. The `comets` R package
+implements these covariance measure tests (COMETs) with a user-friendly
+interface which allows the user to use any sufficiently predictive supervised
+learning algorithm of their choosing. The default is to use random forests
+implemented in `ranger` for all regressions. A Python version of this package is
+available
 [here](https://github.com/shimenghuang/pycomets).
 
 Here, we showcase how to use `comets` with a simple example in which $Y$ is not
@@ -136,11 +137,11 @@ comets(surv ~ sex | age, data = cancer, reg_YonZ = "cox")
 
 ```
 ## 
-## 	Generalised covariance measure test
+## 	TRAM-GCM test
 ## 
 ## data:  comets(formula = surv ~ sex | age, data = cancer, reg_YonZ = "cox")
 ## X-squared = 7.6583, df = 1, p-value = 0.005651
-## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
+## alternative hypothesis: true E[cov(R, X | Z)] is not equal to 0
 ```
 
 ``` r
@@ -149,11 +150,11 @@ comets(surv ~ sex | age, data = cancer, reg_YonZ = "survforest")
 
 ```
 ## 
-## 	Generalised covariance measure test
+## 	TRAM-GCM test
 ## 
 ## data:  comets(formula = surv ~ sex | age, data = cancer, reg_YonZ = "survforest")
 ## X-squared = 14.824, df = 1, p-value = 0.000118
-## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
+## alternative hypothesis: true E[cov(R, X | Z)] is not equal to 0
 ```
 
 # Usage example: Multivariate response
@@ -187,9 +188,10 @@ probability forest. The argument `ordinal_residuals` controls which residuals
 are computed from it: `"probability"` (default) gives the $K - 1$ dimensional
 residuals $1(Y = k) - P(Y = k \mid Z)$, which have power against general
 alternatives, `"mean"` gives $Y - E[Y \mid Z]$ using integer scores, and
-`"score"` gives the score residual of a proportional odds model,
-$P(Y' < Y \mid Z) - P(Y' > Y \mid Z)$, which has power against proportional odds
-alternatives. Below, we simulate an ordinal response with four levels that
+`"score"` gives the score residual $P(Y' < Y \mid Z) - P(Y' > Y \mid Z)$ of a
+proportional odds model whose transformation function is estimated by the
+forest. With `"score"`, the GCM test is the TRAM-GCM test [5] for ordinal
+responses. Below, we simulate an ordinal response with four levels that
 depends on $X$ given $Z$ via a proportional odds model.
 
 
@@ -212,7 +214,7 @@ comets(Y ~ X | Z, data = dord)
 ## 
 ## data:  comets(formula = Y ~ X | Z, data = dord)
 ## X-squared = 8.849, df = 3, p-value = 0.03137
-## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
+## alternative hypothesis: true E[cov(1(Y = k), X | Z)] is not equal to 0
 ```
 
 ``` r
@@ -221,16 +223,16 @@ comets(Y ~ X | Z, data = dord, args_YonZ = list(ordinal_residuals = "score"))
 
 ```
 ## 
-## 	Generalised covariance measure test
+## 	TRAM-GCM test
 ## 
 ## data:  comets(formula = Y ~ X | Z, data = dord, args_YonZ = list(ordinal_residuals = "score"))
 ## X-squared = 10.161, df = 1, p-value = 0.001434
-## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
+## alternative hypothesis: true E[cov(R, X | Z)] is not equal to 0
 ```
 
-Both tests reject the null hypothesis at the 5% level. The test based on the
-one-dimensional score residual yields a smaller p-value, since it targets the
-proportional odds alternative used to simulate the data.
+Both tests reject the null hypothesis at the 5% level. The TRAM-GCM test based
+on the one-dimensional score residual yields a smaller p-value, since the data
+were simulated from a proportional odds model.
 
 # Installation
 

@@ -122,8 +122,8 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
 
   structure(list(
     statistic = stat, p.value = pval, parameter = par,
-    hypothesis = c("E[w(Z) cov(Y, X | Z)]" = "0"),
-    null.value = c("E[w(Z) cov(Y, X | Z)]" = "0"), alternative = alternative,
+    hypothesis = stats::setNames("0", .hypothesis(rY, "w(Z) ")),
+    null.value = stats::setNames("0", .hypothesis(rY, "w(Z) ")), alternative = alternative,
     method = paste0("Weighted generalised covariance measure test"),
     data.name = paste0(deparse(match.call()), collapse = "\n"),
     rY = rY, rX = rX, W = W, models = models

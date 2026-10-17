@@ -78,9 +78,16 @@ components:
 \item{\code{p.value}}{The p-value for the \code{hypothesis}}
 \item{\code{parameter}}{In case X is multidimensional, this is the degrees of
     freedom used for the chi-squared test.}
-\item{\code{hypothesis}}{String specifying the null hypothesis.}
+\item{\code{hypothesis}}{String specifying the null hypothesis. If the
+    residuals for the Y on Z regression are not of the form
+    \eqn{Y - E[Y \mid Z]}, Y is replaced by the corresponding quantity:
+    \code{R} denotes the score residual of a transformation model
+    (TRAM-GCM test), \code{1(Y = k)} the indicators of the levels of a
+    factor response and \code{F(Y | Z)} the conditional distribution
+    function of the response.}
 \item{\code{null.value}}{String specifying the null hypothesis.}
-\item{\code{method}}{The string \code{"Generalised covariance measure test"}.}
+\item{\code{method}}{The string \code{"Generalised covariance measure test"},
+    or \code{"TRAM-GCM test"} for score residuals of transformation models.}
 \item{\code{data.name}}{A character string giving the name(s) of the data.}
 \item{\code{rY}}{Residuals for the Y on Z regression.}
 \item{\code{rX}}{Residuals for the X on Z regression.}
@@ -92,7 +99,9 @@ Generalised covariance measure test
 \details{
 The generalised covariance measure test tests whether the conditional
 covariance of Y and X given Z is zero. This implementation also supports the
-TRAM-GCM test for survival responses, which tests whether the expected
+TRAM-GCM test for survival and ordinal responses (see
+\code{ordinal_residuals} in \code{\link[comets]{regressions}}), which tests
+whether the expected
 conditional covariance between the score residuals of a Y on Z regression
 and X is zero.
 }
