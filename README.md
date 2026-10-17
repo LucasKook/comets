@@ -42,10 +42,10 @@ $Y$ on $Z$ and $X$ on $Z$ regressions can be investigated by calling `plot(GCM)`
 
 ```
 ## 
-## 	Generalized covariance measure test
+## 	Generalised covariance measure test
 ## 
 ## data:  gcm(Y = Y, X = X, Z = Z)
-## X-squared = 2.8211, df = 2, p-value = 0.244
+## X-squared = 3.1556, df = 2, p-value = 0.2064
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
@@ -65,7 +65,7 @@ conditional independence in this example.
 ## 	Projected covariance measure test
 ## 
 ## data:  pcm(Y = Y, X = X, Z = Z)
-## Z = 4.8589, p-value = 5.901e-07
+## Z = 4.8727, p-value = 5.505e-07
 ## alternative hypothesis: true E[Y | X, Z] is not equal to E[Y | Z]
 ```
 
@@ -82,10 +82,10 @@ comets(Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
 
 ```
 ## 
-## 	Generalized covariance measure test
+## 	Generalised covariance measure test
 ## 
 ## data:  comets(formula = Y ~ X1 + X2 | Z1 + Z2, data = dat, test = "gcm")
-## X-squared = 3.2184, df = 2, p-value = 0.2
+## X-squared = 3.2816, df = 2, p-value = 0.1938
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
@@ -136,10 +136,10 @@ comets(surv ~ sex | age, data = cancer, reg_YonZ = "cox")
 
 ```
 ## 
-## 	Generalized covariance measure test
+## 	Generalised covariance measure test
 ## 
 ## data:  comets(formula = surv ~ sex | age, data = cancer, reg_YonZ = "cox")
-## X-squared = 7.7608, df = 1, p-value = 0.005339
+## X-squared = 7.6583, df = 1, p-value = 0.005651
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
@@ -149,10 +149,10 @@ comets(surv ~ sex | age, data = cancer, reg_YonZ = "survforest")
 
 ```
 ## 
-## 	Generalized covariance measure test
+## 	Generalised covariance measure test
 ## 
 ## data:  comets(formula = surv ~ sex | age, data = cancer, reg_YonZ = "survforest")
-## X-squared = 14.827, df = 1, p-value = 0.0001178
+## X-squared = 14.824, df = 1, p-value = 0.000118
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 
@@ -172,10 +172,10 @@ gcm(bivY, X, Z)
 
 ```
 ## 
-## 	Generalized covariance measure test
+## 	Generalised covariance measure test
 ## 
 ## data:  gcm(Y = bivY, X = X, Z = Z)
-## X-squared = 42.177, df = 4, p-value = 1.533e-08
+## X-squared = 40.301, df = 4, p-value = 3.75e-08
 ## alternative hypothesis: true E[cov(Y, X | Z)] is not equal to 0
 ```
 

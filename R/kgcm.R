@@ -26,20 +26,19 @@
 #'     (default is \code{FALSE}).
 #' @param bandwidth Numeric; value of the bandwidth for the Gaussian kernel.
 #'     Defaults to \code{NULL}, corresponding to the median heuristic.
-#' @param ... Currently ignored
+#' @param ... Additional arguments passed to \code{reg_YonZ}.
 #'
 #' @returns Object of class '\code{kgcm}' and '\code{htest}' with the following
 #' components:
 #' \item{\code{statistic}}{The value of the test statistic.}
 #' \item{\code{p.value}}{The p-value for the \code{hypothesis}}
-#' \item{\code{parameter}}{In case X is multidimensional, this is the degrees of
-#'     freedom used for the chi-squared test.}
 #' \item{\code{hypothesis}}{String specifying the null hypothesis.}
 #' \item{\code{null.value}}{String specifying the null hypothesis.}
-#' \item{\code{method}}{The string \code{"Generalised covariance measure test"}.}
+#' \item{\code{method}}{The string \code{"Kernel generalised covariance measure test"}.}
 #' \item{\code{data.name}}{A character string giving the name(s) of the data.}
 #' \item{\code{rY}}{Residuals for the Y on Z regression.}
 #' \item{\code{rX}}{Residuals for the X on Z regression.}
+#' \item{\code{K}}{Gram matrix of the Gaussian kernel evaluated at Z.}
 #' \item{\code{models}}{List of fitted regressions if \code{return_fitted_models} is \code{TRUE}.}
 #'
 #' @importFrom Rcpp sourceCpp
@@ -56,10 +55,11 @@
 #' (gcm1 <- kgcm(Y, X, Z))
 #'
 kgcm <- function(
-    Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", args_YonZ = NULL,
-    args_XonZ = NULL, B = 499L, return_fitted_models = FALSE,
-    multivariate = c("none", "XonZ"),
-    bandwidth = NULL, ...) {
+  Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", args_YonZ = NULL,
+  args_XonZ = NULL, B = 499L, return_fitted_models = FALSE,
+  multivariate = c("none", "XonZ"),
+  bandwidth = NULL, ...
+) {
   Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
@@ -73,22 +73,23 @@ kgcm <- function(
   rX <- XZ[["residuals"]]
   mX <- XZ[["models"]]
 
+  Zm <- as.matrix(Z)
   if (is.null(bandwidth)) {
-    h <- medianheur(Z, NROW(Z), NCOL(Z))
+    h <- medianheur(Zm, NROW(Z), NCOL(Z))
   } else if (is.numeric(bandwidth)) {
     h <- bandwidth
   } else {
     stop("Supply a valid bandwidth (`NULL` for the median heuristic, or a numeric value).")
   }
-  K <- gaussian_gram(Z, h, NROW(Z), NCOL(Z))
-  RP <- rY * rX
-  obs <- 1 / NROW(Z) * c(t(RP) %*% K %*% RP)
+  K <- gaussian_gram(Zm, h, NROW(Z), NCOL(Z))
+  RP <- c(rY) * rX
+  obs <- 1 / NROW(Z) * sum(RP * (K %*% RP))
   smpl <- sapply(1:B, \(b) {
     RM <- sample(c(-1, 1), NROW(Z), TRUE)
     RPM <- RP * RM
-    1 / NROW(Z) * c(t(RPM) %*% K %*% RPM)
+    1 / NROW(Z) * sum(RPM * (K %*% RPM))
   })
-  pval <- (1 + sum(smpl > obs)) / (1 + B)
+  pval <- (1 + sum(smpl >= obs)) / (1 + B)
 
   models <- if (return_fitted_models) {
     list(reg_YonZ = mY, reg_XonZ = mX)
@@ -100,7 +101,7 @@ kgcm <- function(
     statistic = c("Psi" = obs), p.value = pval, parameter = NULL,
     hypothesis = c("E[w(Z) cov(Y, X | Z)]" = "0"),
     null.value = c("E[w(Z) cov(Y, X | Z)]" = "0"), alternative = "two.sided",
-    method = paste0("Kernel generalized covariance measure test"),
+    method = paste0("Kernel generalised covariance measure test"),
     data.name = paste0(deparse(match.call()), collapse = "\n"),
     rY = rY, rX = rX, K = K, models = models
   ), class = c("kgcm", "htest"))
@@ -112,11 +113,11 @@ kgcm <- function(
 #' @exportS3Method plot kgcm
 plot.kgcm <- function(x, plot = TRUE, ...) {
   .data <- NULL
-  pd <- tidyr::pivot_longer(
-    data.frame(rY = x$rY, rX = unname(x$K %*% x$rX)),
-    dplyr::starts_with("rX")
-  )
-  if (requireNamespace("ggplot2")) {
+  if (requireNamespace("ggplot2") & requireNamespace("tidyr") & requireNamespace("dplyr")) {
+    pd <- tidyr::pivot_longer(
+      data.frame(rY = x$rY, rX = unname(x$K %*% x$rX)),
+      dplyr::starts_with("rX")
+    )
     p1 <- ggplot2::ggplot(pd, ggplot2::aes(
       x = .data[["value"]],
       y = .data[["rY"]],
@@ -127,6 +128,7 @@ plot.kgcm <- function(x, plot = TRUE, ...) {
       ggplot2::theme_bw() +
       ggplot2::labs(x = "Weighted residuals X | Z", y = "Residuals Y | Z")
     if (plot) print(p1)
+    return(invisible(p1))
   }
-  return(invisible(p1))
+  stop("Package `ggplot2` not available.")
 }

@@ -8,7 +8,7 @@
 #' Lundborg, A. R., Kim, I., Shah, R. D., & Samworth, R. J. (2024). The
 #' Projected Covariance Measure for assumption-lean variable significance
 #' testing. The Annals of Statistics, 52(6), 2851-2878.
-#' \doi{10.1214/19-aos1857}
+#' \doi{10.1214/24-AOS2447}
 #'
 #' @inheritParams gcm
 #' @param Y Vector of response values. Can be supplied as a numeric vector or
@@ -56,8 +56,6 @@
 #' components:
 #' \item{\code{statistic}}{The value of the test statistic.}
 #' \item{\code{p.value}}{The p-value for the \code{hypothesis}}
-#' \item{\code{parameter}}{In case X is multidimensional, this is the degrees of
-#'     freedom used for the chi-squared test.}
 #' \item{\code{hypothesis}}{Null hypothesis of conditional mean independence.}
 #' \item{\code{null.value}}{Null hypothesis of conditional mean independence.}
 #' \item{\code{method}}{The string \code{"Projected covariance measure test"}.}
@@ -77,13 +75,14 @@
 #' (pcm1 <- pcm(Y, X, Z))
 #'
 pcm <- function(
-    Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
-    reg_YonZ = "rf", reg_YhatonZ = "rf", reg_VonXZ = "rf",
-    reg_RonZ = "rf", args_YonXZ = NULL, args_YonZ = NULL,
-    args_YhatonZ = NULL, args_VonXZ = NULL, args_RonZ = NULL,
-    frac = 0.5, indices = NULL, coin = FALSE, cointrol = NULL,
-    return_fitted_models = FALSE,
-    ...) {
+  Y, X, Z, rep = 1, est_vhat = TRUE, reg_YonXZ = "rf",
+  reg_YonZ = "rf", reg_YhatonZ = "rf", reg_VonXZ = "rf",
+  reg_RonZ = "rf", args_YonXZ = NULL, args_YonZ = NULL,
+  args_YhatonZ = NULL, args_VonXZ = NULL, args_RonZ = NULL,
+  frac = 0.5, indices = NULL, coin = FALSE, cointrol = NULL,
+  return_fitted_models = FALSE,
+  ...
+) {
   call <- match.call()
   ### Data checks
   Y <- .check_data(Y, "Y", "pcm")
@@ -220,7 +219,7 @@ pcm <- function(
 plot.pcm <- function(x, plot = TRUE, ...) {
   .data <- NULL
   test <- x$check.data
-  if (requireNamespace("ggplot2") && requireNamespace("tidyr")) {
+  if (requireNamespace("ggplot2")) {
     mpl <- \(xx, yy, pdat, ...) {
       ggplot2::ggplot(pdat, ggplot2::aes(
         y = .data[[yy]], x = .data[[xx]],
@@ -233,6 +232,7 @@ plot.pcm <- function(x, plot = TRUE, ...) {
     p2 <- mpl("rT", "rY", test) +
       ggplot2::labs(x = "Residuals f(X, Z) | Z", y = "Residuals Y | Z")
     if (plot) print(p2)
+    return(invisible(p2))
   }
-  return(invisible(p2))
+  stop("Package `ggplot2` not available.")
 }

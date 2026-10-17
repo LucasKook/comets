@@ -16,7 +16,7 @@
 #' @param reg_wfun Character string or function specifying the regression for
 #'     estimating the weighting function.
 #'     See \code{?\link[comets]{regressions}} for more detail.
-#' @param args_wfun Additional arguments passed to \code{reg_XonZ}.
+#' @param args_wfun Additional arguments passed to \code{reg_wfun}.
 #' @param frac Relative size of train split.
 #' @param ... Additional arguments currently ignored.
 #'
@@ -24,11 +24,9 @@
 #' components:
 #' \item{\code{statistic}}{The value of the test statistic.}
 #' \item{\code{p.value}}{The p-value for the \code{hypothesis}}
-#' \item{\code{parameter}}{In case X is multidimensional, this is the degrees of
-#'     freedom used for the chi-squared test.}
-#' \item{\code{hypothesis}}{String specifying the null hypothesis .}
+#' \item{\code{hypothesis}}{String specifying the null hypothesis.}
 #' \item{\code{null.value}}{String specifying the null hypothesis.}
-#' \item{\code{method}}{The string \code{"Generalised covariance measure test"}.}
+#' \item{\code{method}}{The string \code{"Weighted generalised covariance measure test"}.}
 #' \item{\code{data.name}}{A character string giving the name(s) of the data.}
 #' \item{\code{rY}}{Residuals for the Y on Z regression.}
 #' \item{\code{rX}}{Weighted residuals for the X on Z regression.}
@@ -89,11 +87,13 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
   mX <- XZ[["models"]]
 
   if (coin) {
+    if (is.null(cointrol$distribution)) {
+      cointrol$distribution <- coin::approximate(B)
+    }
     tst <- do.call("independence_test", c(list(
       rY ~ I(rX * W),
-      alternative = "greater", teststat = "max",
-      distribution = coin::approximate(B)
-    )))
+      alternative = "greater", teststat = "max"
+    ), cointrol))
     df <- NCOL(rY) * NCOL(rX)
     stat <- coin::statistic(tst)
     pval <- coin::pvalue(tst)
@@ -124,7 +124,7 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
     statistic = stat, p.value = pval, parameter = par,
     hypothesis = c("E[w(Z) cov(Y, X | Z)]" = "0"),
     null.value = c("E[w(Z) cov(Y, X | Z)]" = "0"), alternative = alternative,
-    method = paste0("Weighted generalized covariance measure test"),
+    method = paste0("Weighted generalised covariance measure test"),
     data.name = paste0(deparse(match.call()), collapse = "\n"),
     rY = rY, rX = rX, W = W, models = models
   ), class = c("wgcm", "htest"))
@@ -136,11 +136,11 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
 #' @exportS3Method plot wgcm
 plot.wgcm <- function(x, plot = TRUE, ...) {
   .data <- NULL
-  pd <- tidyr::pivot_longer(
-    data.frame(rY = x$rY, rX = unname(x$rX * x$W)),
-    dplyr::starts_with("rX")
-  )
-  if (requireNamespace("ggplot2")) {
+  if (requireNamespace("ggplot2") & requireNamespace("tidyr") & requireNamespace("dplyr")) {
+    pd <- tidyr::pivot_longer(
+      data.frame(rY = x$rY, rX = unname(x$rX * x$W)),
+      dplyr::starts_with("rX")
+    )
     p1 <- ggplot2::ggplot(pd, ggplot2::aes(
       x = .data[["value"]],
       y = .data[["rY"]],
@@ -151,6 +151,7 @@ plot.wgcm <- function(x, plot = TRUE, ...) {
       ggplot2::theme_bw() +
       ggplot2::labs(x = "Weighted residuals X | Z", y = "Residuals Y | Z")
     if (plot) print(p1)
+    return(invisible(p1))
   }
-  return(invisible(p1))
+  stop("Package `ggplot2` not available.")
 }

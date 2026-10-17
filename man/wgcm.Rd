@@ -45,7 +45,7 @@ See \code{?\link[comets]{regressions}} for more detail.}
 
 \item{args_XonZ}{A list of named arguments passed to \code{reg_XonZ}.}
 
-\item{args_wfun}{Additional arguments passed to \code{reg_XonZ}.}
+\item{args_wfun}{Additional arguments passed to \code{reg_wfun}.}
 
 \item{frac}{Relative size of train split.}
 
@@ -55,7 +55,7 @@ used.}
 \item{coin}{Logical; whether or not to use the \code{coin} package for
 computing the test statistic and p-value. The \code{coin} package
 computes variances with n - 1 degrees of freedom.
-The default is \code{TRUE}.}
+The default is \code{FALSE}.}
 
 \item{cointrol}{List; further arguments passed to
 \code{\link[coin]{independence_test}}.}
@@ -75,11 +75,9 @@ Object of class '\code{wgcm}' and '\code{htest}' with the following
 components:
 \item{\code{statistic}}{The value of the test statistic.}
 \item{\code{p.value}}{The p-value for the \code{hypothesis}}
-\item{\code{parameter}}{In case X is multidimensional, this is the degrees of
-    freedom used for the chi-squared test.}
-\item{\code{hypothesis}}{String specifying the null hypothesis .}
+\item{\code{hypothesis}}{String specifying the null hypothesis.}
 \item{\code{null.value}}{String specifying the null hypothesis.}
-\item{\code{method}}{The string \code{"Generalised covariance measure test"}.}
+\item{\code{method}}{The string \code{"Weighted generalised covariance measure test"}.}
 \item{\code{data.name}}{A character string giving the name(s) of the data.}
 \item{\code{rY}}{Residuals for the Y on Z regression.}
 \item{\code{rX}}{Weighted residuals for the X on Z regression.}

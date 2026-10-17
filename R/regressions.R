@@ -7,25 +7,27 @@
 #'    \code{"qrf"}, this is \code{\link[ranger]{ranger}}. In case of
 #'    \code{"lasso"} and \code{"ridge"}, this is \code{\link[glmnet]{glmnet}}.
 #'    In case of \code{"cox"}, this is \code{\link[survival]{coxph}}. In case
-#'    of \code{"xgb"} and \code{"tuned_xgb"} this is
-#'    \code{\link[xgboost]{xgboost}}.
+#'    of \code{"xgb"} and \code{"tuned_xgb"} these are the parameters passed
+#'    to \code{\link[xgboost]{xgb.train}}. In case of \code{"lgbm"}, this is
+#'    \code{lgb.train} from the \code{lightgbm} package.
 #' @details
 #' The implemented choices are \code{"rf"} for random forests as implemented in
 #' ranger, \code{"lasso"} for cross-validated Lasso regression (using the
-#' one-standard error rule), \code{"ridge"}
-#' for cross-validated ridge regression (using the one-standard error rule),
+#' penalty specified in \code{s}), \code{"ridge"}
+#' for cross-validated ridge regression (using the penalty specified in \code{s}),
 #' \code{"cox"} for the Cox proportional
 #' hazards model as implemented in survival, \code{"qrf"} or \code{"survforest"}
 #' for quantile and survival random forests, respectively. The option
 #' \code{"postlasso"} option refers to a cross-validated LASSO (using the
-#' one-standard error rule) and subsequent OLS regression. The \code{"lrm"}
+#' penalty specified in \code{s}) and subsequent OLS regression. The \code{"lrm"}
 #' option implements a standard linear regression model. The \code{"xgb"} and
-#' \code{"tuned_xgb"} options require the \code{xgboost} package.
+#' \code{"tuned_xgb"} options require the \code{xgboost} package and the
+#' \code{"lgbm"} option requires the \code{lightgbm} package.
 #'
 #' The \code{"tuned_rf"} regression method tunes the \code{mtry} and
 #' \code{max.depth} parameters in \code{\link[ranger]{ranger}} out-of-bag.
 #' The \code{"tuned_xgb"} regression method uses k-fold cross-validation to
-#' tune the \code{nrounds}, \code{mtry} and \code{max_depth} parameters in
+#' tune the \code{nrounds}, \code{eta} and \code{max_depth} parameters in
 #' \code{\link[xgboost]{xgb.cv}}.
 #'
 #' New regression methods can be implemented and supplied as well and need the
@@ -125,8 +127,8 @@ residuals.qrf <- \(object, data, ...) {
   K <- K / B
   diag(K) <- 0
   K <- K / pmax(colSums(K), .Machine$double.eps)
-  pred <- \(y) mean(K %*% as.numeric(object$response <= y))
-  ipreds <- sapply(object$response, pred)
+  pred <- \(i) sum(K[i, ] * as.numeric(object$response <= object$response[i]))
+  ipreds <- sapply(seq_along(object$response), pred)
   2 * ipreds - 1
 }
 
@@ -234,8 +236,9 @@ residuals.postlasso <- function(object, response = NULL, data = NULL, ...) {
 
 ### unilasso
 unilasso <- function(
-    y, x, loo = TRUE, lower.limits = 0, standardize = FALSE,
-    s = "lambda.min", ...) {
+  y, x, loo = TRUE, lower.limits = 0, standardize = FALSE,
+  s = "lambda.min", ...
+) {
   ms <- apply(x, 2, \(tx) {
     stats::lm(y ~ tx)
   }, simplify = FALSE)
@@ -345,14 +348,14 @@ tuned_rf <- function(y, x, max.depths = 1:5,
 # Boosting ---------------------------------------------------------------
 
 #' @rdname regressions
-#' @param nrounds See \code{\link[xgboost]{xgboost}}.
-#' @param verbose See \code{\link[xgboost]{xgboost}}.
+#' @param nrounds See \code{\link[xgboost]{xgb.train}}.
+#' @param verbose See \code{\link[xgboost]{xgb.train}}.
 xgb <- function(y, x, nrounds = 2L, verbose = 0L, ...) {
   if (requireNamespace("xgboost")) {
-    bst <- do.call("xgboost", c(list(
-      data = x, label = y, nrounds = nrounds,
-      verbose = verbose
-    ), list(...)))
+    bst <- xgboost::xgb.train(
+      params = list(...), data = xgboost::xgb.DMatrix(x, label = y),
+      nrounds = nrounds, verbose = verbose
+    )
     class(bst) <- c("xgb", class(bst))
     return(bst)
   }
@@ -361,10 +364,10 @@ xgb <- function(y, x, nrounds = 2L, verbose = 0L, ...) {
 
 #' @rdname regressions
 #' @param etas Values for \code{eta} to cross-validate. See
-#'     \code{\link[xgboost]{xgboost}}.
+#'     \code{\link[xgboost]{xgb.train}}.
 #' @param max_depths Values for \code{max_depth} to cross-validate. See
-#'     \code{\link[xgboost]{xgboost}}.
-#' @param metrics See \code{\link[xgboost]{xgboost}}.
+#'     \code{\link[xgboost]{xgb.train}}.
+#' @param metrics See \code{\link[xgboost]{xgb.cv}}.
 #' @param nfold Number of folds for \code{nfold}-cross validation.
 #' @param folds Specify folds for cross validation.
 tuned_xgb <- function(y, x, nfold, folds, etas = c(0.1, 0.5, 1),
@@ -372,7 +375,7 @@ tuned_xgb <- function(y, x, nfold, folds, etas = c(0.1, 0.5, 1),
                       verbose = 0, metrics = list("rmse"), ...) {
   if (requireNamespace("xgboost")) {
     args <- list(
-      data = x, label = y, verbose = verbose,
+      data = xgboost::xgb.DMatrix(x, label = y), verbose = verbose,
       metrics = metrics
     )
     if (missing(folds) && missing(nfold)) {
@@ -388,9 +391,8 @@ tuned_xgb <- function(y, x, nfold, folds, etas = c(0.1, 0.5, 1),
       lapply(max_depths, \(tmd) {
         lapply(nrounds, \(tnr) {
           args$nrounds <- tnr
-          args$eta <- teta
-          args$max_depth <- tmd
-          cv <- do.call("xgb.cv", c(args, list(...)))
+          args$params <- c(list(eta = teta, max_depth = tmd), list(...))
+          cv <- do.call(xgboost::xgb.cv, args)
           ### Take min over boosting iterations
           err <- min(cv$evaluation_log[[paste0("test_", metrics[[1]], "_mean")]])
           data.frame(
@@ -404,7 +406,6 @@ tuned_xgb <- function(y, x, nfold, folds, etas = c(0.1, 0.5, 1),
       nrounds = cvres$nrounds[best], verbose = verbose,
       max_depth = cvres$max_depth[best], eta = cvres$eta[best], ...
     )
-    class(bst) <- c("xgb", class(bst))
     return(bst)
   }
   stop("Package `xgboost` not available.")
@@ -426,7 +427,7 @@ residuals.xgb <- function(object, response = NULL, data = NULL, ...) {
 lgbm <- function(y, x, nrounds = 100L, verbose = -1L, ...) {
   if (requireNamespace("lightgbm")) {
     dtr <- lightgbm::lgb.Dataset(data = x, label = y)
-    bst <- do.call("lgb.train", c(list(
+    bst <- do.call(lightgbm::lgb.train, c(list(
       data = dtr, nrounds = nrounds,
       verbose = verbose
     ), list(...)))

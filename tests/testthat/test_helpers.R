@@ -368,3 +368,78 @@ test_that("PCM with rep larger 1 and indices", {
     tmp("lrm")
   })
 })
+
+test_that("kGCM works with multivariate X and matrix/data.frame inputs", {
+  set.seed(12)
+  tn <- 1e2
+  X <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(X) <- c("X1", "X2")
+  Z <- matrix(rnorm(2 * tn), ncol = 2)
+  colnames(Z) <- c("Z1", "Z2")
+  Y <- rnorm(tn)
+  kgcm1 <- kgcm(Y, X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm", B = 99)
+  expect_length(kgcm1$statistic, 1)
+  expect_true(kgcm1$p.value > 0 && kgcm1$p.value <= 1)
+  expect_no_error(kgcm(cbind(Y), X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm", B = 99))
+  expect_no_error(kgcm(Y, X, as.data.frame(Z), reg_XonZ = "lrm", reg_YonZ = "lrm", B = 99))
+  ### Univariate X gives the same statistic as before
+  kgcm2 <- kgcm(Y, X[, 1], Z, reg_XonZ = "lrm", reg_YonZ = "lrm", B = 99)
+  RP <- c(kgcm2$rY) * c(kgcm2$rX)
+  expect_equal(unname(kgcm2$statistic), c(t(RP) %*% kgcm2$K %*% RP) / tn)
+})
+
+test_that("scalar GCM returns signed statistic", {
+  set.seed(42)
+  rY <- rnorm(100)
+  rX <- rnorm(100) - rY
+  tst <- rgcm(rY, rX, type = "scalar", coin = FALSE)
+  expect_true(tst$statistic < 0)
+  expect_null(tst$parameter)
+  expect_equal(tst$p.value, 2 * pnorm(-abs(unname(tst$statistic))))
+  expect_equal(
+    unname(rgcm(rY, rX, type = "quadratic", coin = FALSE)$statistic),
+    unname(tst$statistic)^2
+  )
+  expect_error(rgcm(rY, cbind(rX, rnorm(100)), type = "scalar", coin = FALSE))
+  expect_error(rgcm(rY, rX, alternative = "foo"))
+})
+
+test_that("data.frame inputs and missing values are handled", {
+  set.seed(12)
+  tn <- 1e2
+  X <- data.frame(X1 = rnorm(tn), X2 = rnorm(tn))
+  Z <- data.frame(Z1 = rnorm(tn), Z2 = rnorm(tn))
+  Y <- data.frame(Y1 = rnorm(tn), Y2 = rnorm(tn))
+  expect_no_error(gcm(Y, X, Z, reg_XonZ = "lrm", reg_YonZ = "lrm"))
+  expect_no_error(gcm(Y[, 1], X, Z, reg_XonZ = "postlasso", reg_YonZ = "glrm"))
+  expect_no_error(pcm(Y[, 1], X, Z, reg_YonXZ = "lrm", reg_YonZ = "lrm"))
+  dat <- data.frame(y = Y[, 1], x = X[, 1], z = Z[, 1])
+  dat$y[1:5] <- NA
+  dat$z[6:10] <- NA
+  expect_no_error(tst <- comet(y ~ x | z, data = dat, reg_XonZ = "lrm", reg_YonZ = "lrm"))
+  expect_length(tst$rY, tn - 10)
+})
+
+test_that("qrf residuals are conditional on Z", {
+  set.seed(12)
+  tn <- 2e2
+  z <- rnorm(tn)
+  y <- 3 * z + rnorm(tn)
+  m <- qrf(y, cbind(z))
+  r <- residuals(m, response = y, data = cbind(z))
+  expect_true(abs(cor(r, z)) < 0.2)
+  expect_true(all(abs(r) <= 1 + 1e-8))
+})
+
+test_that("wGCM passes cointrol to coin", {
+  set.seed(12)
+  tn <- 1e2
+  X <- rnorm(tn)
+  Z <- rnorm(tn)
+  Y <- rnorm(tn)
+  tst <- wgcm(Y, X, Z,
+    reg_XonZ = "lrm", reg_YonZ = "lrm", reg_wfun = "lrm",
+    cointrol = list(distribution = coin::approximate(9))
+  )
+  expect_true(any(abs(tst$p.value - (0:9) / 9) < 1e-8))
+})

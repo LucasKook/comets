@@ -6,3 +6,5 @@
 ^tests/
 ^README.Rmd
 ^Makefile$
+^NEWS\.md$
+^cran-comments\.md$

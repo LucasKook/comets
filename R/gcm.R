@@ -30,16 +30,17 @@
 #'     X on Z. See \code{?\link[comets]{regressions}} for more detail.
 #' @param args_YonZ A list of named arguments passed to \code{reg_YonZ}.
 #' @param args_XonZ A list of named arguments passed to \code{reg_XonZ}.
-#' @param type Type of test statistic, either \code{"quadratic"} (default) or
-#'     \code{"max"}. If \code{"max"} is specified, the p-value is computed
-#'     based on a bootstrap approximation of the null distribution with
-#'     \code{B} samples.
+#' @param type Type of test statistic, either \code{"quadratic"} (default),
+#'     \code{"max"}, or \code{"scalar"}. If \code{"max"} is specified, the
+#'     p-value is computed based on a bootstrap approximation of the null
+#'     distribution with \code{B} samples. The \code{"scalar"} statistic is
+#'     only available for one-dimensional Y and X.
 #' @param B Number of bootstrap samples. Only applies if \code{type = "max"} is
 #'     used.
 #' @param coin Logical; whether or not to use the \code{coin} package for
 #'     computing the test statistic and p-value. The \code{coin} package
 #'     computes variances with n - 1 degrees of freedom.
-#'     The default is \code{TRUE}.
+#'     The default is \code{FALSE}.
 #' @param cointrol List; further arguments passed to
 #'     \code{\link[coin]{independence_test}}.
 #' @param multivariate Character; specifying which regression can handle
@@ -76,11 +77,12 @@
 #' (gcm1 <- gcm(Y, X, Z))
 #'
 gcm <- function(
-    Y, X, Z, alternative = c("two.sided", "less", "greater"),
-    reg_YonZ = "rf", reg_XonZ = "rf", args_YonZ = NULL,
-    args_XonZ = NULL, type = c("quadratic", "max", "scalar"), B = 499L,
-    coin = FALSE, cointrol = list(distribution = "asymptotic"),
-    return_fitted_models = FALSE, multivariate = c("none", "YonZ", "XonZ", "both"), ...) {
+  Y, X, Z, alternative = c("two.sided", "less", "greater"),
+  reg_YonZ = "rf", reg_XonZ = "rf", args_YonZ = NULL,
+  args_XonZ = NULL, type = c("quadratic", "max", "scalar"), B = 499L,
+  coin = FALSE, cointrol = list(distribution = "asymptotic"),
+  return_fitted_models = FALSE, multivariate = c("none", "YonZ", "XonZ", "both"), ...
+) {
   Y <- .check_data(Y, "Y")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
@@ -163,6 +165,9 @@ gcm <- function(
   if ("tibble" %in% class(x)) {
     x <- as.data.frame(x)
   }
+  if (is.data.frame(x) && all(vapply(x, is.numeric, logical(1)))) {
+    x <- as.matrix(x)
+  }
   if (NCOL(x) == 0) {
     x <- matrix(1, nrow = NROW(x), ncol = 1)
   }
@@ -177,10 +182,14 @@ gcm <- function(
 
 #' @importFrom stats pnorm
 .gcm <- function(
-    rY, rX, alternative = "two.sided", type = "quadratic", B = 499L) {
+  rY, rX, alternative = "two.sided", type = "quadratic", B = 499L
+) {
   dY <- NCOL(rY)
   dX <- NCOL(rX)
   nn <- NROW(rY)
+  if (type == "scalar" && (dY > 1 || dX > 1)) {
+    stop("`type = \"scalar\"` is only available for one-dimensional Y and X.")
+  }
   if (type == "max") {
     RR <- cbind(rY)[, rep(seq_len(dY), each = dX)] *
       cbind(rX)[, rep(seq_len(dX), dY)]
@@ -202,7 +211,7 @@ gcm <- function(
       "greater" = 1 - stats::pnorm(stat),
       "less" = stats::pnorm(stat)
     )
-    stat <- stat^2
+    if (type != "scalar") stat <- stat^2
   } else {
     RR <- cbind(rY)[, rep(seq_len(dY), each = dX)] *
       cbind(rX)[, rep(seq_len(dX), dY)]
@@ -264,7 +273,7 @@ plot.gcm <- function(x, plot = TRUE, ...) {
       names_to = "nX",
       values_to = "rX"
     )
-    if (NCOL(x$rY > 1)) {
+    if (NCOL(x$rY) > 1) {
       pd <- tidyr::pivot_longer(pd, dplyr::starts_with("rY"),
         names_to = "nY", values_to = "rY"
       )
@@ -311,9 +320,11 @@ plot.gcm <- function(x, plot = TRUE, ...) {
 #' \item{\code{rX}}{Residuals for the X on Z regression.}
 #' @export
 rgcm <- function(
-    rY, rX, alternative = "two.sided", coin = FALSE, B = 499L,
-    type = c("quadratic", "max", "scalar"), ...) {
+  rY, rX, alternative = "two.sided", coin = FALSE, B = 499L,
+  type = c("quadratic", "max", "scalar"), ...
+) {
   type <- match.arg(type)
+  alternative <- match.arg(alternative, c("two.sided", "less", "greater"))
   if (coin) {
     tst <- coin::independence_test(rY ~ rX,
       alternative = alternative, teststat = type, ...
@@ -327,7 +338,7 @@ rgcm <- function(
   } else {
     tst <- .gcm(rY, rX, alternative = alternative, type = type, B = B)
     stat <- tst$stat
-    df <- tst$df
+    df <- if (type == "scalar") NULL else tst$df
     pval <- tst$pval
   }
   names(stat) <- switch(type,
@@ -339,7 +350,7 @@ rgcm <- function(
     statistic = stat, p.value = pval, parameter = df,
     hypothesis = c("E[cov(Y, X | Z)]" = "0"),
     null.value = c("E[cov(Y, X | Z)]" = "0"), alternative = alternative,
-    method = paste0("Generalized covariance measure test"),
+    method = paste0("Generalised covariance measure test"),
     data.name = paste0(deparse(match.call()), collapse = "\n"),
     rY = rY, rX = rX
   ), class = c("gcm", "htest"), test = tst)

@@ -15,3 +15,5 @@ mimic
 Makefile
 *.o
 *.so
+NEWS.md
+cran-comments.md
