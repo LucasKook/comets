@@ -86,8 +86,9 @@ to \code{\link[xgboost]{xgb.train}}. In case of \code{"lgbm"}, this is
 \item{max.depths}{Values for \code{max.depth} to tune out-of-bag. See
 \code{\link[ranger]{ranger}}.}
 
-\item{mtrys}{for \code{mtry} to tune out-of-bag. See
-\code{\link[ranger]{ranger}}.}
+\item{mtrys}{Values or functions of the number of predictors for
+\code{mtry} to tune out-of-bag. Duplicate evaluated values are fitted
+only once per depth. See \code{\link[ranger]{ranger}}.}
 
 \item{verbose}{See \code{\link[xgboost]{xgb.train}}.}
 
@@ -126,7 +127,9 @@ The \code{"tuned_rf"} regression method tunes the \code{mtry} and
 \code{max.depth} parameters in \code{\link[ranger]{ranger}} out-of-bag.
 The \code{"tuned_xgb"} regression method uses k-fold cross-validation to
 tune the \code{nrounds}, \code{eta} and \code{max_depth} parameters in
-\code{\link[xgboost]{xgb.cv}}.
+\code{\link[xgboost]{xgb.cv}}. It evaluates all iterations up to the
+largest supplied \code{nrounds} and uses the best iteration. The same folds
+are used for every parameter combination.
 
 New regression methods can be implemented and supplied as well and need the
 following structure. The regression method \code{"custom_reg"} needs to take

@@ -52,6 +52,9 @@ wgcm <- function(Y, X, Z, reg_YonZ = "rf", reg_XonZ = "rf", reg_wfun = "rf",
   Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X")
   Z <- .check_data(Z, "Z")
+  n <- .validate_observations(Y = Y, X = X, Z = Z)
+  .validate_split(n, frac)
+  if (!coin || is.null(cointrol$distribution)) .validate_bootstrap(B)
   alternative <- "greater"
   multivariate <- match.arg(multivariate)
   mvXonZ <- multivariate %in% c("XonZ", "both")

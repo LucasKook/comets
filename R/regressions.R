@@ -28,7 +28,9 @@
 #' \code{max.depth} parameters in \code{\link[ranger]{ranger}} out-of-bag.
 #' The \code{"tuned_xgb"} regression method uses k-fold cross-validation to
 #' tune the \code{nrounds}, \code{eta} and \code{max_depth} parameters in
-#' \code{\link[xgboost]{xgb.cv}}.
+#' \code{\link[xgboost]{xgb.cv}}. It evaluates all iterations up to the
+#' largest supplied \code{nrounds} and uses the best iteration. The same folds
+#' are used for every parameter combination.
 #'
 #' New regression methods can be implemented and supplied as well and need the
 #' following structure. The regression method \code{"custom_reg"} needs to take
@@ -157,7 +159,8 @@ residuals.rf <- function(object, response = NULL, data = NULL, ...) {
   if (length(unused) > 0) {
     warning(
       "Dropping unused level(s) of the response: ",
-      paste(unused, collapse = ", "), call. = FALSE
+      paste(unused, collapse = ", "),
+      call. = FALSE
     )
     y <- droplevels(y)
   }
@@ -213,17 +216,28 @@ qrf <- function(y, x, ...) {
 residuals.qrf <- \(object, data, ...) {
   class(object) <- class(object)[-1]
   tn <- stats::predict(object, data = data, type = "terminalNodes")$predictions
-  K <- matrix(0, nrow = N <- nrow(tn), ncol = N)
-  for (tree in seq_len(B <- object$num.trees)) {
-    K <- K + sapply(seq_len(nrow(tn)), \(obs) {
-      as.numeric(tn[obs, tree] == tn[, tree])
-    }, simplify = "matrix")
+  n <- NROW(tn)
+  if (n != length(object$response) || is.null(data) ||
+    !isTRUE(all.equal(unname(as.matrix(data)), unname(as.matrix(object$x)), check.attributes = FALSE))) {
+    stop("Quantile-forest residuals require the training observations in their original order.", call. = FALSE)
   }
-  K <- K / B
-  diag(K) <- 0
-  K <- K / pmax(colSums(K), .Machine$double.eps)
-  pred <- \(i) sum(K[i, ] * as.numeric(object$response <= object$response[i]))
-  ipreds <- sapply(seq_along(object$response), pred)
+  y <- object$response
+  if (!is.numeric(y) || any(!is.finite(y))) stop("Quantile-forest responses must be finite and numeric.", call. = FALSE)
+  counts <- numeric(n)
+  for (tree in seq_len(NCOL(tn))) {
+    groups <- match(tn[, tree], unique(tn[, tree]))
+    counts <- counts + tabulate(groups)[groups] - 1
+  }
+  ipreds <- numeric(n)
+  order_y <- order(y)
+  for (tree in seq_len(NCOL(tn))) {
+    nodes <- split(order_y, tn[order_y, tree])
+    for (idx in nodes) {
+      last_tie <- findInterval(y[idx], y[idx])
+      ipreds[idx] <- ipreds[idx] + last_tie - 1
+    }
+  }
+  ipreds <- ipreds / pmax(counts, 1)
   .label_residuals(2 * ipreds - 1, "F(Y | Z)")
 }
 
@@ -404,8 +418,9 @@ residuals.cox <- function(object, response = NULL, data = NULL, ...) {
 #' @rdname regressions
 #' @param max.depths Values for \code{max.depth} to tune out-of-bag. See
 #'     \code{\link[ranger]{ranger}}.
-#' @param mtrys for \code{mtry} to tune out-of-bag. See
-#'     \code{\link[ranger]{ranger}}.
+#' @param mtrys Values or functions of the number of predictors for
+#'     \code{mtry} to tune out-of-bag. Duplicate evaluated values are fitted
+#'     only once per depth. See \code{\link[ranger]{ranger}}.
 tuned_rf <- function(y, x, max.depths = 1:5,
                      mtrys = list(1, \(p) ceiling(sqrt(p)), identity),
                      verbose = FALSE,
@@ -422,9 +437,16 @@ tuned_rf <- function(y, x, max.depths = 1:5,
   }
 
   ### Tune OOB max.depth
+  mtrys <- lapply(mtrys, function(mtry) {
+    value <- if (is.function(mtry)) mtry(NCOL(x)) else mtry
+    if (is.numeric(value) && length(value) == 1L) as.double(value) else value
+  })
+  mtrys <- mtrys[!duplicated(mtrys)]
   tmp_args <- args
-  rfs <- lapply(seq_along(max.depths), \(tmd) {
-    lapply(seq_along(mtrys), \(tmt) {
+  best_rf <- NULL
+  best_error <- Inf
+  for (tmd in seq_along(max.depths)) {
+    for (tmt in seq_along(mtrys)) {
       if (verbose) {
         cat(
           "Tuning step with max.depth", tmd, "out of", length(max.depths),
@@ -433,12 +455,15 @@ tuned_rf <- function(y, x, max.depths = 1:5,
       }
       tmp_args$max.depth <- max.depths[tmd]
       tmp_args$mtry <- mtrys[[tmt]]
-      do.call("ranger", c(list(y = y, x = x), tmp_args))
-    })
-  }) |> unlist(recursive = FALSE)
-
-  woob <- which.min(sapply(rfs, `[[`, "prediction.error"))
-  rf <- rfs[[woob]]
+      candidate <- do.call("ranger", c(list(y = y, x = x), tmp_args))
+      if (is.finite(candidate$prediction.error) && candidate$prediction.error < best_error) {
+        best_rf <- candidate
+        best_error <- candidate$prediction.error
+      }
+    }
+  }
+  if (is.null(best_rf)) stop("No forest produced a finite out-of-bag prediction error.", call. = FALSE)
+  rf <- best_rf
   rf$ordinal_residuals <- ordinal_residuals
   rf$response_levels <- levels(y)
   class(rf) <- c("rf", class(rf))
@@ -478,27 +503,29 @@ tuned_xgb <- function(y, x, nfold, folds, etas = c(0.1, 0.5, 1),
       data = xgboost::xgb.DMatrix(x, label = y), verbose = verbose,
       metrics = metrics
     )
-    if (missing(folds) && missing(nfold)) {
+    if ((missing(folds) || is.null(folds)) && missing(nfold)) {
       nfold <- 5
     }
-    if (!missing(nfold)) {
-      args$nfold <- nfold
+    if (missing(folds) || is.null(folds)) {
+      if (length(nfold) != 1L || !is.numeric(nfold) || !is.finite(nfold) || nfold < 2 || nfold > NROW(x) || nfold != floor(nfold)) {
+        stop("`nfold` must be an integer between 2 and the number of observations.", call. = FALSE)
+      }
+      fold_id <- sample(rep(seq_len(nfold), length.out = NROW(x)))
+      folds <- split(seq_len(NROW(x)), fold_id)
     }
-    if (!missing(folds)) {
-      args$folds <- folds
+    args$folds <- folds
+    if (!length(nrounds) || any(!is.finite(nrounds)) || any(nrounds < 1 | nrounds != floor(nrounds))) {
+      stop("`nrounds` must contain positive integers.", call. = FALSE)
     }
+    args$nrounds <- max(nrounds)
     cvres <- lapply(etas, \(teta) {
       lapply(max_depths, \(tmd) {
-        lapply(nrounds, \(tnr) {
-          args$nrounds <- tnr
-          args$params <- c(list(eta = teta, max_depth = tmd), list(...))
-          cv <- do.call(xgboost::xgb.cv, args)
-          ### Take min over boosting iterations
-          err <- min(cv$evaluation_log[[paste0("test_", metrics[[1]], "_mean")]])
-          data.frame(
-            nrounds = tnr, eta = teta, max_depth = tmd, error = err
-          )
-        }) |> do.call("rbind", args = _)
+        args$params <- c(list(eta = teta, max_depth = tmd), list(...))
+        cv <- do.call(xgboost::xgb.cv, args)
+        errors <- cv$evaluation_log[[paste0("test_", metrics[[1]], "_mean")]]
+        if (is.null(errors) || !any(is.finite(errors))) stop("Cross-validation did not produce finite values for the requested metric.", call. = FALSE)
+        iteration <- which.min(errors)
+        data.frame(nrounds = iteration, eta = teta, max_depth = tmd, error = errors[iteration])
       }) |> do.call("rbind", args = _)
     }) |> do.call("rbind", args = _)
     best <- which.min(cvres$error)[1]

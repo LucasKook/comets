@@ -186,9 +186,9 @@ test_that("equivalence test on different scales", {
   Z <- matrix(rnorm(2 * n), ncol = 2)
   colnames(Z) <- c("Z1", "Z2")
   Y <- X^2 + Z[, 2] + rnorm(n)
-  expect_no_error(plm_equiv_test(Y, X, Z, from = -1, to = 1))
-  expect_no_error(plm_equiv_test(Y, X, Z, from = -1, to = 1, scale = "cov"))
-  expect_no_error(plm_equiv_test(Y, X, Z, from = -1, to = 1, scale = "cor"))
+  expect_warning(plm_equiv_test(Y, X, Z, from = -1, to = 1), "experimental")
+  expect_no_warning(plm_equiv_test(Y, X, Z, from = -1, to = 1, scale = "cov"))
+  expect_warning(plm_equiv_test(Y, X, Z, from = -1, to = 1, scale = "cor"), "experimental")
   expect_error(plm_equiv_test(Y, cbind(X, X), Z, from = -1, to = 1, scale = "cor"))
 })
 

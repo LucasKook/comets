@@ -16,6 +16,8 @@ kgcm(
   return_fitted_models = FALSE,
   multivariate = c("none", "XonZ"),
   bandwidth = NULL,
+  return_kernel = TRUE,
+  batch_size = 32L,
   ...
 )
 }
@@ -47,7 +49,16 @@ If \code{"none"}, then the regression is run using each column in X as
 the response.}
 
 \item{bandwidth}{Numeric; value of the bandwidth for the Gaussian kernel.
-Defaults to \code{NULL}, corresponding to the median heuristic.}
+Defaults to \code{NULL}, corresponding to the median heuristic.
+For constant Z the default produces a constant kernel; if the median
+distance is zero for nonconstant Z, provide a positive bandwidth.}
+
+\item{return_kernel}{Logical; retain the Gram matrix in the result for
+plotting (default \code{TRUE}). Setting it to \code{FALSE} reduces the
+size of the returned object, but not peak memory during computation.}
+
+\item{batch_size}{Maximum number of bootstrap draws multiplied by the Gram
+matrix at once. Larger batches may be faster but require more memory.}
 
 \item{...}{Additional arguments passed to \code{reg_YonZ}.}
 }
