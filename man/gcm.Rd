@@ -31,8 +31,9 @@ gcm(
 
 \item{alternative}{A character string specifying the alternative hypothesis,
 must be one of \code{"two.sided"} (default), \code{"greater"} or
-\code{"less"}. Only applies if \code{type = "quadratic"} and \code{Y} and
-\code{X} are one-dimensional.}
+\code{"less"}. One-sided alternatives are supported for scalar tests
+and the max statistic; for a quadratic statistic they apply only when
+\code{Y} and \code{X} are one-dimensional.}
 
 \item{reg_YonZ}{Character string or function specifying the regression for
 Y on Z. See \code{?\link[comets]{regressions}} for more detail.}
@@ -104,6 +105,9 @@ TRAM-GCM test for survival and ordinal responses (see
 whether the expected
 conditional covariance between the score residuals of a Y on Z regression
 and X is zero.
+For a multivariate quadratic statistic, a rank-deficient residual-product
+covariance is handled using a pseudoinverse; the chi-squared degrees of
+freedom are the estimated rank. A zero-rank covariance cannot be tested.
 }
 \examples{
 n <- 1e2

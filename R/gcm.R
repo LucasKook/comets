@@ -8,6 +8,9 @@
 #' whether the expected
 #' conditional covariance between the score residuals of a Y on Z regression
 #' and X is zero.
+#' For a multivariate quadratic statistic, a rank-deficient residual-product
+#' covariance is handled using a pseudoinverse; the chi-squared degrees of
+#' freedom are the estimated rank. A zero-rank covariance cannot be tested.
 #'
 #' @references
 #' Rajen D. Shah, Jonas Peters "The hardness of conditional independence testing
@@ -24,8 +27,9 @@
 #' @param Z Matrix or data.frame of covariates.
 #' @param alternative A character string specifying the alternative hypothesis,
 #'     must be one of \code{"two.sided"} (default), \code{"greater"} or
-#'     \code{"less"}. Only applies if \code{type = "quadratic"} and \code{Y} and
-#'     \code{X} are one-dimensional.
+#'     \code{"less"}. One-sided alternatives are supported for scalar tests
+#'     and the max statistic; for a quadratic statistic they apply only when
+#'     \code{Y} and \code{X} are one-dimensional.
 #' @param reg_YonZ Character string or function specifying the regression for
 #'     Y on Z. See \code{?\link[comets]{regressions}} for more detail.
 #' @param reg_XonZ Character string or function specifying the regression for
@@ -189,6 +193,27 @@ gcm <- function(
   x
 }
 
+.validate_observations <- function(...) {
+  data <- list(...)
+  n <- vapply(data, NROW, integer(1))
+  if (length(unique(n)) != 1L) stop("Inputs must have the same number of rows.", call. = FALSE)
+  if (n[1L] < 2L) stop("At least two observations are required.", call. = FALSE)
+  for (name in names(data)) {
+    x <- data[[name]]
+    cols <- if (is.data.frame(x)) x else if (is.matrix(x)) as.data.frame(x) else list(x)
+    if (any(vapply(cols, function(z) anyNA(z) || (is.numeric(z) && any(!is.finite(z))), logical(1)))) {
+      stop("`", name, "` must not contain missing or non-finite values.", call. = FALSE)
+    }
+  }
+  invisible(n[1L])
+}
+
+.validate_bootstrap <- function(B) {
+  if (length(B) != 1L || !is.numeric(B) || !is.finite(B) || B < 1 || B != floor(B) || B > .Machine$integer.max) {
+    stop("`B` must be a positive integer.", call. = FALSE)
+  }
+}
+
 #' @importFrom stats pnorm
 .gcm <- function(
   rY, rX, alternative = "two.sided", type = "quadratic", B = 499L
@@ -200,42 +225,62 @@ gcm <- function(
     stop("`type = \"scalar\"` is only available for one-dimensional Y and X.")
   }
   if (type == "max") {
-    RR <- cbind(rY)[, rep(seq_len(dY), each = dX)] *
-      cbind(rX)[, rep(seq_len(dX), dY)]
+    RR <- cbind(rY)[, rep(seq_len(dY), each = dX), drop = FALSE] *
+      cbind(rX)[, rep(seq_len(dX), dY), drop = FALSE]
     tRR <- t(RR)
     mRR <- rowMeans(tRR)
-    tRR <- tRR / sqrt((rowMeans(tRR^2) - mRR^2))
-    stat <- max(abs(mRR)) * sqrt(nn)
-    sim <- apply(abs(tRR %*% matrix(
-      stats::rnorm(nn * B), nn, B
-    )), 2, max) / sqrt(nn)
+    sdRR <- sqrt(rowMeans((tRR - mRR)^2))
+    if (any(!is.finite(sdRR) | sdRR == 0)) {
+      stop("Residual products must have positive finite variance for the max statistic.")
+    }
+    tRR <- tRR / sdRR
+    observed <- sqrt(nn) * mRR / sdRR
+    boot <- tRR %*% matrix(stats::rnorm(nn * B), nn, B) / sqrt(nn)
+    if (alternative == "two.sided") {
+      observed <- abs(observed)
+      boot <- abs(boot)
+    } else if (alternative == "less") {
+      observed <- -observed
+      boot <- -boot
+    }
+    stat <- max(observed)
+    sim <- apply(boot, 2L, max)
     pval <- (sum(sim >= stat) + 1) / (B + 1)
   } else if (dY == 1 && dX == 1) {
     RR <- c(rY) * c(rX)
-    R.sq <- RR^2
     meanR <- mean(RR)
-    stat <- sqrt(nn) * meanR / sqrt(mean(R.sq) - meanR^2)
+    variance <- mean((RR - meanR)^2)
+    if (!is.finite(variance) || variance <= 0) {
+      stop("Residual products must have positive finite variance.")
+    }
+    stat <- sqrt(nn) * meanR / sqrt(variance)
     pval <- switch(alternative,
       "two.sided" = 2 * stats::pnorm(-abs(stat)),
-      "greater" = 1 - stats::pnorm(stat),
+      "greater" = stats::pnorm(stat, lower.tail = FALSE),
       "less" = stats::pnorm(stat)
     )
     if (type != "scalar") stat <- stat^2
   } else {
-    RR <- cbind(rY)[, rep(seq_len(dY), each = dX)] *
-      cbind(rX)[, rep(seq_len(dX), dY)]
-    sigma <- crossprod(RR) / nn - tcrossprod(colMeans(RR))
-    eig <- eigen(sigma)
-    if (min(eig$values) < .Machine$double.eps) {
-      warning("`vcov` of test statistic is not invertible")
+    RR <- cbind(rY)[, rep(seq_len(dY), each = dX), drop = FALSE] *
+      cbind(rX)[, rep(seq_len(dX), dY), drop = FALSE]
+    means <- colMeans(RR)
+    centered <- sweep(RR, 2L, means)
+    sigma <- crossprod(centered) / nn
+    eig <- eigen(sigma, symmetric = TRUE)
+    keep <- eig$values > max(eig$values) * sqrt(.Machine$double.eps)
+    rank <- sum(keep)
+    if (rank == 0L) stop("Residual-product covariance has zero rank.")
+    if (rank < ncol(RR)) {
+      warning("Residual-product covariance is rank deficient; using a pseudoinverse.", call. = FALSE)
     }
-    siginvhalf <- eig$vectors %*% diag(eig$values^(-1 / 2)) %*%
-      t(eig$vectors)
-    tstat <- siginvhalf %*% colSums(RR) / sqrt(nn)
-    stat <- sum(tstat^2)
-    pval <- stats::pchisq(stat, df = dX * dY, lower.tail = FALSE)
+    projected <- crossprod(eig$vectors[, keep, drop = FALSE], means)
+    stat <- nn * sum(projected^2 / eig$values[keep])
+    pval <- stats::pchisq(stat, df = rank, lower.tail = FALSE)
   }
-  list("stat" = stat, "pval" = pval, "df" = c("df" = dX * dY))
+  list(
+    "stat" = stat, "pval" = pval,
+    "df" = c("df" = if (type == "quadratic" && dX * dY > 1L) rank else dX * dY)
+  )
 }
 
 ### Label residuals for printing the null hypothesis, e.g., "R" for score
@@ -360,6 +405,13 @@ rgcm <- function(
   type = c("quadratic", "max", "scalar"), hypothesis = NULL, ...
 ) {
   type <- match.arg(type)
+  .validate_observations(rY = rY, rX = rX)
+  if (is.data.frame(rY) && all(vapply(rY, is.numeric, logical(1)))) rY <- as.matrix(rY)
+  if (is.data.frame(rX) && all(vapply(rX, is.numeric, logical(1)))) rX <- as.matrix(rX)
+  if (!is.numeric(rY) || !is.numeric(rX) || NCOL(rY) < 1L || NCOL(rX) < 1L) {
+    stop("Residuals must be non-empty numeric vectors or matrices.", call. = FALSE)
+  }
+  if (!coin && type == "max") .validate_bootstrap(B)
   if (is.null(hypothesis)) {
     hypothesis <- .hypothesis(rY)
   }

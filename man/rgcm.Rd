@@ -22,8 +22,9 @@ rgcm(
 
 \item{alternative}{A character string specifying the alternative hypothesis,
 must be one of \code{"two.sided"} (default), \code{"greater"} or
-\code{"less"}. Only applies if \code{type = "quadratic"} and \code{Y} and
-\code{X} are one-dimensional.}
+\code{"less"}. One-sided alternatives are supported for scalar tests
+and the max statistic; for a quadratic statistic they apply only when
+\code{Y} and \code{X} are one-dimensional.}
 
 \item{coin}{Logical; whether or not to use the \code{coin} package for
 computing the test statistic and p-value. The \code{coin} package

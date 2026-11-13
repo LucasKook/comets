@@ -88,6 +88,17 @@ pcm <- function(
   Y <- .check_data(Y, "Y", "pcm")
   X <- .check_data(X, "X", "pcm")
   Z <- .check_data(Z, "Z", "pcm")
+  n <- .validate_observations(Y = Y, X = X, Z = Z)
+  if (length(rep) != 1L || !is.numeric(rep) || !is.finite(rep) || rep < 1 || rep != floor(rep)) {
+    stop("`rep` must be a positive integer.", call. = FALSE)
+  }
+  if (rep > 1L && !is.null(indices) && (!is.list(indices) || length(indices) != rep)) {
+    stop("Please supply a list of indices of length `rep`.", call. = FALSE)
+  }
+  if (rep == 1L) .validate_split(n, frac, indices)
+  if (rep > 1L) {
+    for (i in seq_len(rep)) .validate_split(n, frac, if (is.null(indices)) NULL else indices[[i]])
+  }
   ### Multiple splits
   if (rep != 1) {
     if (!is.null(indices) && length(indices) != rep) {
@@ -127,17 +138,29 @@ pcm <- function(
     pghat <- predict(ghat, data = cbind(Xtr, Ztr))
     mtilde <- do.call(reg_YhatonZ, c(list(x = Ztr, y = pghat), args_YhatonZ))
     htilde <- \(X, Z) predict(ghat, data = cbind(X, Z)) - predict(mtilde, data = Z)
-    rho <- mean(stats::residuals(mtilde, response = Ytr, data = Ztr) *
-      predict(ghat, data = cbind(Xtr, Ztr)))
+    rho <- mean(stats::residuals(mtilde, response = Ytr, data = Ztr) * pghat)
     hhat <- \(X, Z) sign(rho) * htilde(X, Z)
 
     ### Obtain hat{v}
     if (est_vhat) {
       sqr <- stats::residuals(ghat, response = Ytr, data = cbind(Xtr, Ztr))^2
       vtilde <- do.call(reg_VonXZ, c(list(x = cbind(Xtr, Ztr), y = sqr), args_VonXZ))
-      a <- function(c) mean(sqr / (pmax(predict(vtilde, data = cbind(Xtr, Ztr)), 0) + c))
+      vtrain <- pmax(predict(vtilde, data = cbind(Xtr, Ztr)), 0)
+      if (any(!is.finite(vtrain)) || any(!is.finite(sqr))) {
+        stop("Variance regression produced non-finite values.", call. = FALSE)
+      }
+      a <- function(c) {
+        denom <- vtrain + c
+        ratio <- sqr / denom
+        ratio[denom == 0 & sqr == 0] <- 0
+        mean(ratio)
+      }
       chat <- if (a(0) < 1) 0 else stats::uniroot(\(c) a(c) - 1, c(0, 10), extendInt = "yes")$root
-      vhat <- \(X, Z) pmax(predict(vtilde, data = cbind(X, Z)), 0) + chat
+      vhat <- function(X, Z) {
+        v <- pmax(predict(vtilde, data = cbind(X, Z)), 0) + chat
+        if (any(!is.finite(v) | v <= 0)) stop("Estimated test variance must be positive and finite.", call. = FALSE)
+        v
+      }
     } else {
       vtilde <- NULL
       vhat <- \(X, Z) 1
@@ -162,8 +185,10 @@ pcm <- function(
       pval <- coin::pvalue(tst)
     } else {
       L <- rY * rT
-      stat <- sqrt(NROW(Yte)) * mean(L) / sqrt(mean(L^2) - mean(L)^2)
-      if (is.nan(stat)) stat <- -Inf
+      if (any(!is.finite(L))) stop("PCM residual products must be finite.", call. = FALSE)
+      variance <- mean((L - mean(L))^2)
+      if (!is.finite(variance) || variance <= 0) stop("PCM residual products must have positive finite variance.", call. = FALSE)
+      stat <- sqrt(NROW(Yte)) * mean(L) / sqrt(variance)
       pval <- pnorm(stat, lower.tail = FALSE)
     }
 
@@ -195,6 +220,23 @@ pcm <- function(
 }
 
 # Helpers -----------------------------------------------------------------
+
+.validate_split <- function(n, frac, indices = NULL) {
+  if (is.null(indices)) {
+    if (length(frac) != 1L || !is.numeric(frac) || !is.finite(frac) || frac <= 0 || frac >= 1) {
+      stop("`frac` must be strictly between 0 and 1.", call. = FALSE)
+    }
+    size <- ceiling(frac * n)
+  } else {
+    if (!is.numeric(indices) || anyNA(indices) || any(!is.finite(indices)) ||
+      any(indices != floor(indices)) || any(indices < 1 | indices > n) || anyDuplicated(indices)) {
+      stop("`indices` must contain unique, valid integer row indices.", call. = FALSE)
+    }
+    size <- length(indices)
+  }
+  if (size < 2L || n - size < 2L) stop("Each split must contain at least two observations.", call. = FALSE)
+  invisible(NULL)
+}
 
 .split_sample <- function(Y, X, Z, frac = 0.5, indices = NULL) {
   idx <- indices

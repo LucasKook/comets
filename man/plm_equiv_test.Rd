@@ -26,7 +26,9 @@ covariance and \code{"cor"} to conditional correlation which lies in
 \item{...}{Further arguments passed to \code{\link{gcm}}}
 }
 \value{
-Object of class '\code{gcm}' and '\code{htest}'
+Object of class '\code{gcm}' and '\code{htest}', including the
+    estimated parameter in \code{estimate} and its influence-function
+    standard error in \code{std.error}.
 }
 \description{
 Equivalence test for the parameter in a partially linear model
@@ -43,6 +45,13 @@ also be performed on the conditional covariance scale directly (using
 \code{scale = "cov"}) or on the conditional correlation scale:
 \deqn{E[cov(X, Y | Z)] / \sqrt{E[Var(X | Z)]E[Var(Y | Z)]}},
 using \code{scale = "cor"}.
+The \code{"plm"} and \code{"cor"} tests are experimental and issue a warning.
+For these scales, the standard error is computed from
+the influence function of the ratio, accounting for estimation of its
+denominator. The calculation assumes that the conditional mean regressions
+and their estimation errors satisfy the conditions needed for asymptotic
+inference; the score is orthogonal at the true conditional means, but this
+alone does not guarantee valid inference if one regression is misspecified.
 }
 \examples{
 n <- 150
